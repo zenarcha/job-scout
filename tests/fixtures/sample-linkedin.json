@@ -1,0 +1,29 @@
+[
+  {
+    "id": "ln-1001",
+    "title": "Product Manager, AI Platform",
+    "companyName": "Acme AI",
+    "location": "Remote (India)",
+    "jobUrl": "https://www.linkedin.com/jobs/view/1001",
+    "postedAt": "2026-07-09T10:00:00Z",
+    "descriptionHtml": "<p>We are hiring a <b>Product Manager</b> for our AI platform. Work from anywhere in India. You will write SQL, work with APIs, and run experiments. IIT/IIM preferred but not required.</p><ul><li>SQL</li><li>A/B testing</li><li>LLM evaluation</li></ul>"
+  },
+  {
+    "id": "ln-1002",
+    "title": "Senior Product Manager",
+    "companyName": "Onsite Corp",
+    "location": "Bengaluru, India (On-site)",
+    "jobUrl": "https://www.linkedin.com/jobs/view/1002",
+    "postedAt": "1720000000000",
+    "descriptionHtml": "<p>On-site role in our Bengaluru office. Hybrid, 3 days a week in office.</p>"
+  },
+  {
+    "id": "gh-2001",
+    "title": "Product Manager AI Platform",
+    "companyName": "Acme AI",
+    "location": "Remote - India",
+    "jobUrl": "https://boards.greenhouse.io/acmeai/jobs/2001",
+    "postedAt": "2026-07-09",
+    "descriptionHtml": "<p>Product Manager for the AI platform. Remote, India eligible.</p>"
+  }
+]

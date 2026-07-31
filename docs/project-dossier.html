@@ -1,0 +1,460 @@
+<title>AI Job Application OS — Project Dossier</title>
+<style>
+  :root {
+    --bg: #F3F4F7;
+    --surface: #FFFFFF;
+    --surface-inset: #EBEDF2;
+    --ink: #14181F;
+    --ink-soft: #4B515C;
+    --ink-faint: #7B8290;
+    --border: #DDE1E7;
+    --accent: #2748C6;
+    --accent-ink: #1B34A0;
+    --accent-soft: #E8ECFB;
+    --done: #1F8A5F;
+    --done-soft: #E3F3EA;
+    --pending: #B4790A;
+    --pending-soft: #FBF0DD;
+    --frozen: #5B6472;
+    --frozen-soft: #E9EAEE;
+    --lane-a: #2748C6;
+    --lane-b: #1F8A5F;
+    --lane-c: #B4790A;
+    --lane-d: #8B8F98;
+    --font-display: Georgia, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
+    --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14171C;
+      --surface: #1B1F26;
+      --surface-inset: #20242C;
+      --ink: #ECEEF2;
+      --ink-soft: #A7ADB8;
+      --ink-faint: #6E7580;
+      --border: #2A2F38;
+      --accent: #6E8CF5;
+      --accent-ink: #8CA4F8;
+      --accent-soft: #202B4D;
+      --done: #3FBE85;
+      --done-soft: #16281F;
+      --pending: #E0A63E;
+      --pending-soft: #2E2410;
+      --frozen: #9AA2AE;
+      --frozen-soft: #22262E;
+      --lane-a: #6E8CF5;
+      --lane-b: #3FBE85;
+      --lane-c: #E0A63E;
+      --lane-d: #9AA2AE;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14171C; --surface: #1B1F26; --surface-inset: #20242C; --ink: #ECEEF2;
+    --ink-soft: #A7ADB8; --ink-faint: #6E7580; --border: #2A2F38; --accent: #6E8CF5;
+    --accent-ink: #8CA4F8; --accent-soft: #202B4D; --done: #3FBE85; --done-soft: #16281F;
+    --pending: #E0A63E; --pending-soft: #2E2410; --frozen: #9AA2AE; --frozen-soft: #22262E;
+    --lane-a: #6E8CF5; --lane-b: #3FBE85; --lane-c: #E0A63E; --lane-d: #9AA2AE;
+  }
+  :root[data-theme="light"] {
+    --bg: #F3F4F7; --surface: #FFFFFF; --surface-inset: #EBEDF2; --ink: #14181F;
+    --ink-soft: #4B515C; --ink-faint: #7B8290; --border: #DDE1E7; --accent: #2748C6;
+    --accent-ink: #1B34A0; --accent-soft: #E8ECFB; --done: #1F8A5F; --done-soft: #E3F3EA;
+    --pending: #B4790A; --pending-soft: #FBF0DD; --frozen: #5B6472; --frozen-soft: #E9EAEE;
+    --lane-a: #2748C6; --lane-b: #1F8A5F; --lane-c: #B4790A; --lane-d: #8B8F98;
+  }
+
+  * { box-sizing: border-box; }
+  body { background: var(--bg); }
+
+  .dossier {
+    font-family: var(--font-body);
+    color: var(--ink);
+    background: var(--bg);
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 40px 24px 96px;
+    line-height: 1.6;
+  }
+
+  a { color: var(--accent-ink); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  a:focus-visible, button:focus-visible, summary:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+
+  h1, h2, h3 { font-family: var(--font-display); font-weight: 400; text-wrap: balance; color: var(--ink); }
+  code, .mono { font-family: var(--font-mono); font-size: 0.92em; }
+
+  /* ── masthead ───────────────────────────────────────────── */
+  .masthead { border-bottom: 1px solid var(--border); padding-bottom: 28px; margin-bottom: 36px; }
+  .eyebrow {
+    font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.09em; text-transform: uppercase;
+    color: var(--accent-ink); margin: 0 0 10px;
+  }
+  .masthead h1 { font-size: 2.15rem; margin: 0 0 10px; letter-spacing: -0.01em; }
+  .masthead .dek { color: var(--ink-soft); font-size: 1.02rem; max-width: 62ch; margin: 0 0 16px; }
+  .masthead .meta { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 0.82rem; color: var(--ink-faint); }
+  .masthead .meta span strong { color: var(--ink-soft); font-weight: 600; }
+
+  /* ── layout: TOC rail + content ────────────────────────── */
+  .layout { display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 48px; align-items: start; }
+  @media (max-width: 760px) { .layout { grid-template-columns: 1fr; } }
+
+  .toc {
+    position: sticky; top: 24px;
+    display: flex; flex-direction: column; gap: 2px;
+    font-size: 0.86rem;
+  }
+  @media (max-width: 760px) {
+    .toc { position: static; flex-direction: row; flex-wrap: wrap; gap: 4px 14px; margin-bottom: 8px; }
+  }
+  .toc a { color: var(--ink-soft); padding: 5px 0; border-left: 2px solid transparent; padding-left: 10px; }
+  .toc a:hover { color: var(--ink); text-decoration: none; border-left-color: var(--border); }
+  @media (max-width: 760px) { .toc a { border-left: none; padding-left: 0; } }
+
+  main.content { min-width: 0; display: flex; flex-direction: column; gap: 56px; }
+  section { scroll-margin-top: 20px; }
+  section h2 {
+    font-size: 1.32rem; margin: 0 0 18px; padding-bottom: 10px; border-bottom: 1px solid var(--border);
+  }
+  section > .lede { color: var(--ink-soft); margin: -8px 0 18px; max-width: 68ch; }
+
+  /* ── status snapshot ──────────────────────────────────────*/
+  .snapshot-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 22px 24px;
+  }
+  .phase-strip { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: var(--font-mono); font-size: 0.76rem; padding: 5px 10px; border-radius: 999px;
+    border: 1px solid transparent; white-space: nowrap;
+  }
+  .pill.done { background: var(--done-soft); color: var(--done); }
+  .pill.pending { background: var(--pending-soft); color: var(--pending); }
+  .pill.frozen { background: var(--frozen-soft); color: var(--frozen); }
+  .pill .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none; }
+
+  .blocker {
+    display: flex; gap: 14px; align-items: flex-start;
+    background: var(--pending-soft); border: 1px solid color-mix(in srgb, var(--pending) 35%, transparent);
+    border-radius: 8px; padding: 16px 18px; margin-top: 4px;
+  }
+  .blocker .stripe { width: 3px; align-self: stretch; background: var(--pending); border-radius: 2px; flex: none; }
+  .blocker h3 { font-family: var(--font-body); font-size: 0.95rem; font-weight: 700; margin: 0 0 6px; color: var(--ink); }
+  .blocker p { margin: 0 0 10px; color: var(--ink-soft); font-size: 0.92rem; }
+  .blocker ol { margin: 0; padding-left: 20px; font-size: 0.92rem; }
+  .blocker li { margin-bottom: 4px; }
+
+  /* ── timeline (sessions) ───────────────────────────────── */
+  .session {
+    display: grid; grid-template-columns: 22px 1fr; gap: 0 18px; position: relative;
+  }
+  .session + .session { margin-top: 30px; }
+  .session .rail { position: relative; }
+  .session .rail::before {
+    content: ""; position: absolute; left: 50%; top: 22px; bottom: -30px; width: 1px;
+    background: var(--border); transform: translateX(-50%);
+  }
+  .session:last-child .rail::before { display: none; }
+  .session .rail .node {
+    width: 12px; height: 12px; border-radius: 50%; background: var(--surface);
+    border: 2px solid var(--accent); margin-top: 4px;
+  }
+  .session .body h3 { font-size: 1.05rem; margin: 0 0 4px; font-family: var(--font-body); font-weight: 700; }
+  .session .body .when { font-family: var(--font-mono); font-size: 0.74rem; color: var(--ink-faint); margin-bottom: 10px; display: block; }
+  .session .body p { margin: 0 0 10px; color: var(--ink-soft); font-size: 0.94rem; max-width: 70ch; }
+  .session .body ul { margin: 0 0 10px; padding-left: 20px; font-size: 0.92rem; color: var(--ink-soft); }
+  .session .body li { margin-bottom: 4px; }
+  .session .body li strong { color: var(--ink); }
+
+  /* ── lane legend ───────────────────────────────────────── */
+  .lane-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+  .lane-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 14px 16px; border-left: 3px solid var(--lane); position: relative;
+  }
+  .lane-card.a { --lane: var(--lane-a); } .lane-card.b { --lane: var(--lane-b); }
+  .lane-card.c { --lane: var(--lane-c); } .lane-card.d { --lane: var(--lane-d); }
+  .lane-card .tag {
+    font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.04em; color: var(--lane);
+    text-transform: uppercase; display: block; margin-bottom: 4px;
+  }
+  .lane-card .name { font-weight: 700; font-size: 0.95rem; margin-bottom: 4px; }
+  .lane-card .desc { font-size: 0.86rem; color: var(--ink-soft); }
+  .lane-note {
+    margin-top: 14px; font-size: 0.86rem; color: var(--ink-soft); background: var(--surface-inset);
+    border-radius: 8px; padding: 12px 14px;
+  }
+  .lane-note strong { color: var(--ink); }
+
+  /* ── decision table ────────────────────────────────────── */
+  .table-scroll { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; }
+  table.decisions { width: 100%; border-collapse: collapse; font-size: 0.87rem; background: var(--surface); }
+  table.decisions th {
+    text-align: left; font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--ink-faint); padding: 10px 14px; border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; background: var(--surface);
+  }
+  table.decisions td { padding: 9px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  table.decisions tr:last-child td { border-bottom: none; }
+  table.decisions td.id { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--accent-ink); white-space: nowrap; }
+  table.decisions td.session { white-space: nowrap; }
+  .badge { font-family: var(--font-mono); font-size: 0.68rem; padding: 2px 7px; border-radius: 5px; }
+  .badge.s1 { background: var(--surface-inset); color: var(--ink-soft); }
+  .badge.s2 { background: var(--accent-soft); color: var(--accent-ink); }
+
+  /* ── architecture summary ─────────────────────────────── */
+  .arch-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+  .arch-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px 18px; }
+  .arch-card h3 { font-family: var(--font-body); font-size: 0.92rem; font-weight: 700; margin: 0 0 8px; }
+  .arch-card p, .arch-card ul { font-size: 0.85rem; color: var(--ink-soft); margin: 0; }
+  .arch-card ul { padding-left: 18px; }
+  .arch-card li { margin-bottom: 4px; }
+  .arch-card code { background: var(--surface-inset); padding: 1px 5px; border-radius: 4px; }
+
+  /* ── roadmap ──────────────────────────────────────────── */
+  .roadmap { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .rstep { display: grid; grid-template-columns: 34px 1fr auto; gap: 14px; align-items: start; padding: 13px 16px; background: var(--surface); }
+  .rstep + .rstep { border-top: 1px solid var(--border); }
+  .rstep .n { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--ink-faint); font-size: 0.85rem; padding-top: 1px; }
+  .rstep .t strong { display: block; font-size: 0.92rem; margin-bottom: 2px; }
+  .rstep .t span { font-size: 0.83rem; color: var(--ink-soft); }
+  .rstep .s { align-self: center; }
+
+  /* ── files / environment ─────────────────────────────── */
+  .file-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+  .file-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
+  .file-card .name { font-family: var(--font-mono); font-size: 0.86rem; color: var(--accent-ink); display: block; margin-bottom: 4px; }
+  .file-card .desc { font-size: 0.83rem; color: var(--ink-soft); }
+  .env-line { display: flex; gap: 10px; font-size: 0.87rem; padding: 6px 0; border-bottom: 1px solid var(--border); }
+  .env-line:last-child { border-bottom: none; }
+  .env-line .k { color: var(--ink-faint); min-width: 130px; font-family: var(--font-mono); font-size: 0.8rem; }
+  .env-line .v { color: var(--ink); }
+
+  footer.note { margin-top: 60px; padding-top: 20px; border-top: 1px solid var(--border); font-size: 0.82rem; color: var(--ink-faint); }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+</style>
+
+<div class="dossier">
+
+  <header class="masthead">
+    <p class="eyebrow">Project Dossier · Compiled from decisions.md, session-summary.md, plans.md, learnings.md, backlog.md</p>
+    <h1>AI Job Application OS</h1>
+    <p class="dek">Formerly the “Remote PM Job Tracker.” An always-on, free-to-run system that discovers remote, India-eligible PM-track roles, qualifies them with AI, and is evolving into a full application decision engine.</p>
+    <div class="meta">
+      <span><strong>Sessions logged:</strong> 2</span>
+      <span><strong>Decisions recorded:</strong> D-1 – D-28</span>
+      <span><strong>Working directory:</strong> <code>~/Documents/Job Postings</code></span>
+      <span><strong>Last updated:</strong> 2026-07-10</span>
+    </div>
+  </header>
+
+  <div class="layout">
+    <nav class="toc" aria-label="Table of contents">
+      <a href="#status">Where things stand</a>
+      <a href="#timeline">What happened</a>
+      <a href="#lanes">Lanes, explained</a>
+      <a href="#decisions">Decision log</a>
+      <a href="#architecture">Architecture</a>
+      <a href="#roadmap">What’s next</a>
+      <a href="#files">Where it lives</a>
+    </nav>
+
+    <main class="content">
+
+      <section id="status">
+        <h2>Where things stand</h2>
+        <div class="snapshot-card">
+          <div class="phase-strip">
+            <span class="pill done"><span class="dot"></span>Foundation build (Phases 0–3)</span>
+            <span class="pill done"><span class="dot"></span>Lane-ready schema prep</span>
+            <span class="pill pending"><span class="dot"></span>Verify on real data</span>
+            <span class="pill frozen"><span class="dot"></span>Qualification + Lane Engine — waiting</span>
+          </div>
+          <div class="blocker">
+            <div class="stripe" aria-hidden="true"></div>
+            <div>
+              <h3>Currently blocked on two secrets</h3>
+              <p>Everything is built and the schema is live, but nothing has run on real job data yet. Add these to <code>.env</code> to unblock verification:</p>
+              <ol>
+                <li><code>SUPABASE_SERVICE_ROLE_KEY</code> — Supabase → Project Settings → API keys</li>
+                <li><code>GEMINI_API_KEY</code> — Google AI Studio (free)</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="timeline">
+        <h2>What happened</h2>
+        <p class="lede">Two sessions so far: one built the working system, one reframed where it’s headed.</p>
+
+        <div class="session">
+          <div class="rail"><div class="node"></div></div>
+          <div class="body">
+            <h3>Session 1 — Built the tracker, went live</h3>
+            <span class="when">2026-07-10 · Phases 0–3</span>
+            <p>Planned across five refinement rounds, from a basic job scraper into a fuller system, then built end to end:</p>
+            <ul>
+              <li><strong>Discovery</strong> — ingest from Apify + ATS feeds, cross-source dedup, source-reliability ranking</li>
+              <li><strong>Enrichment</strong> — five versioned AI stages: classify, resume-match, skills, salary (parsed only, never guessed), recommend</li>
+              <li><strong>Notifications</strong> — Telegram (instant for high-priority, digest otherwise) + Notion sync</li>
+              <li><strong>Went live</strong> — created Supabase project <code>job-tracker</code> (<code>ap-south-1</code>, $0/mo), applied schema, seeded an 11-company watchlist</li>
+            </ul>
+            <p>Everything runs on free tiers, with Gemini as the default AI provider, swappable to Cerebras or Grok.</p>
+          </div>
+        </div>
+
+        <div class="session">
+          <div class="rail"><div class="node"></div></div>
+          <div class="body">
+            <h3>Session 2 — Reframed as an Application OS, prepped the schema</h3>
+            <span class="when">2026-07-10 · Product evolution + lane-ready prep</span>
+            <p>A synthesis brought in the idea that this tracker is the foundation of something bigger: an <strong>AI Job Application OS</strong> — discover, qualify, prioritize, and execute applications with minimal manual effort. Guiding rule: <em>evolve, don’t rewrite; extract capabilities, don’t merge projects.</em></p>
+            <ul>
+              <li><strong>Qualification over recommendation</strong> — AI will emit structured signals, not a final verdict</li>
+              <li><strong>A deterministic Lane Engine</strong> reads those signals and computes a lane — see below</li>
+              <li><strong>Lane ≠ Urgency</strong> — strategy and timing were split into two independent concerns</li>
+              <li><strong>“Interest” retired</strong> — replaced by Personal Preference (yours), Opportunity Score (AI’s), and one active Goal</li>
+              <li><strong>Discovery generalized</strong> to accept a future Chrome extension and manual imports, both AI-free</li>
+              <li><strong>Application Assets</strong> (resume, referral, outreach, cover letter) stays on the roadmap — schema deliberately deferred until the existing prototype projects are studied</li>
+              <li><strong>Architecture then frozen</strong> — further ideas go to a backlog, not into a redesign</li>
+            </ul>
+            <p>To prepare without changing behavior, an additive migration added empty signal/lane/urgency columns and an <code>inbox</code> status — nothing reads them yet.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="lanes">
+        <h2>Lanes, explained</h2>
+        <p class="lede">The concept you asked about. Proposed in Session 2, not yet built — the columns exist, but nothing computes a lane today.</p>
+        <div class="lane-grid">
+          <div class="lane-card a"><span class="tag">Lane A</span><span class="name">Referral</span><span class="desc">High background match → referral outreach + a tailored resume.</span></div>
+          <div class="lane-card b"><span class="tag">Lane B</span><span class="name">Builder</span><span class="desc">Builder-culture, remote startup, portfolio valued → a product artifact + founder outreach.</span></div>
+          <div class="lane-card c"><span class="tag">Lane C</span><span class="name">Practice</span><span class="desc">Worth applying, not a priority → resume only.</span></div>
+          <div class="lane-card d"><span class="tag">Lane D</span><span class="name">Skip</span><span class="desc">Not worth pursuing right now.</span></div>
+        </div>
+        <div class="lane-note">
+          <strong>Why the AI doesn’t just say “Lane A”:</strong> the AI only outputs neutral measurements — background match, builder culture, referral value, portfolio value, and more. A separate, plain <strong>Lane Engine</strong> applies configurable rules to those measurements to pick the lane. When your strategy changes, only the rules change — every stored job can be re-sorted without re-running any AI. Lane answers <em>“which application strategy”</em>; a separate <code>urgency</code> field (deadline, job age, freshness) answers <em>“how fast to act”</em> and drives alert timing instead.
+        </div>
+      </section>
+
+      <section id="decisions">
+        <h2>Decision log</h2>
+        <p class="lede">Every decision made across both sessions, in order. Full reasoning and rejected alternatives live in <code>decisions.md</code>.</p>
+        <div class="table-scroll">
+          <table class="decisions">
+            <thead><tr><th>ID</th><th>Decision</th><th>Session</th></tr></thead>
+            <tbody>
+              <tr><td class="id">D-1</td><td>Discovery via Apify (managed scraping) + company ATS feeds</td><td class="session"><span class="badge s1">S1</span></td></tr>
+              <tr><td class="id">D-2</td><td>Deliver across three surfaces: Dashboard + Notion + Telegram</td><td class="session"><span class="badge s1">S1</span></td></tr>
+              <tr><td class="id">D-3</td><td>Hard scope to remote + India-eligible; everything else is a filterable tag</td><td class="session"><span class="badge s1">S1</span></td></tr>
+              <tr><td class="id">D-4</td><td>Host on Supabase (DB + scheduling) + Vercel (dashboard)</td><td class="session"><span class="badge s1">S1</span></td></tr>
+              <tr><td class="id">D-5</td><td>Free tier only; AI via Gemini/Cerebras/Grok behind an <code>AIService</code> — never paid</td><td class="session"><span class="badge s1">S1</span></td></tr>
+              <tr><td class="id">D-6</td><td>Split immutable <code>jobs</code> from versioned <code>job_enrichments</code></td><td class="session"><span class="badge s1">S1</span></td></tr>
+              <tr><td class="id">D-7</td><td>Confidence-gated trust with a manual review queue below 0.6</td><td class="session"><span class="badge s1">S1</span></td></tr>
+              <tr><td class="id">D-8</td><td>Source-reliability ranking decides the canonical copy on duplicates</td><td class="session"><span class="badge s1">S1</span></td></tr>
+              <tr><td class="id">D-9</td><td>Version every AI output: classifier, prompt, provider, and model</td><td class="session"><span class="badge s1">S1</span></td></tr>
+              <tr><td class="id">D-10</td><td>Event-driven pipeline via an append-only <code>job_events</code> bus</td><td class="session"><span class="badge s1">S1</span></td></tr>
+              <tr><td class="id">D-11</td><td>Incremental analytics rollups instead of full recompute</td><td class="session"><span class="badge s1">S1</span></td></tr>
+              <tr><td class="id">D-12</td><td>Parse-only salary — never LLM-estimated</td><td class="session"><span class="badge s1">S1</span></td></tr>
+              <tr><td class="id">D-13</td><td>One TypeScript codebase for the backend, no Deno/Node split</td><td class="session"><span class="badge s1">S1</span></td></tr>
+              <tr><td class="id">D-14</td><td>New dedicated Supabase project <code>job-tracker</code>, not the old paused one</td><td class="session"><span class="badge s1">S1</span></td></tr>
+              <tr><td class="id">D-15</td><td>Get the system live first, then keep building on proven ground</td><td class="session"><span class="badge s1">S1</span></td></tr>
+              <tr><td class="id">D-16</td><td>Notification idempotency via a <code>NotificationSent</code> event, no extra column</td><td class="session"><span class="badge s1">S1</span></td></tr>
+              <tr><td class="id">D-17</td><td>Conceptual shift: <code>Job → Qualification → Application</code> — no rename until validated</td><td class="session"><span class="badge s2">S2</span></td></tr>
+              <tr><td class="id">D-18</td><td>Store signals, not decisions — a deterministic Lane Engine computes the lane</td><td class="session"><span class="badge s2">S2</span></td></tr>
+              <tr><td class="id">D-19</td><td>“Interest” split into Personal Preference, Opportunity Score, and Goal Match</td><td class="session"><span class="badge s2">S2</span></td></tr>
+              <tr><td class="id">D-20</td><td>Lane ≠ Urgency — <code>priority</code> becomes time-based <code>urgency</code></td><td class="session"><span class="badge s2">S2</span></td></tr>
+              <tr><td class="id">D-21</td><td>Multi-source discovery; the future Chrome extension does zero AI</td><td class="session"><span class="badge s2">S2</span></td></tr>
+              <tr><td class="id">D-22</td><td>Treat <code>source</code> as a first-class analytics dimension</td><td class="session"><span class="badge s2">S2</span></td></tr>
+              <tr><td class="id">D-23</td><td>Application Assets: extract from existing prototypes, don’t merge — schema deferred</td><td class="session"><span class="badge s2">S2</span></td></tr>
+              <tr><td class="id">D-24</td><td>Validate the current pipeline on real data before building lanes</td><td class="session"><span class="badge s2">S2</span></td></tr>
+              <tr><td class="id">D-25</td><td>Goal Match starts as exactly one active goal, no weighting engine</td><td class="session"><span class="badge s2">S2</span></td></tr>
+              <tr><td class="id">D-26</td><td>Version the qualification logic and lane rules too</td><td class="session"><span class="badge s2">S2</span></td></tr>
+              <tr><td class="id">D-27</td><td>Job Inbox is just a new <code>status</code> value — no new table</td><td class="session"><span class="badge s2">S2</span></td></tr>
+              <tr><td class="id">D-28</td><td>Freeze the baseline architecture — evidence-driven changes only from here</td><td class="session"><span class="badge s2">S2</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="architecture">
+        <h2>Architecture, at a glance</h2>
+        <p class="lede">Nine standing principles carried the design through both sessions. The shape hasn’t changed since — only the schema grew additively.</p>
+        <div class="arch-grid">
+          <div class="arch-card">
+            <h3>Data model</h3>
+            <ul>
+              <li><code>jobs</code> — immutable, exactly as scraped</li>
+              <li><code>job_enrichments</code> — versioned AI output, one active row per stage</li>
+              <li><code>job_tracking</code> — your edits: status, notes, locked fields</li>
+              <li><code>job_events</code> — append-only bus and audit trail</li>
+            </ul>
+          </div>
+          <div class="arch-card">
+            <h3>Pipeline stages</h3>
+            <ul>
+              <li>classify → resume-match → skills → salary → recommend</li>
+              <li>each stage independently retryable, never blocks the others</li>
+              <li>reserved for later: a <code>qualify</code> stage, no rename yet</li>
+            </ul>
+          </div>
+          <div class="arch-card">
+            <h3>Trust &amp; safety rails</h3>
+            <ul>
+              <li>confidence &lt; 0.6 → flagged for review, never auto-applied</li>
+              <li>manual overrides lock a field against future AI writes</li>
+              <li>salary is parsed only — never a guess</li>
+            </ul>
+          </div>
+          <div class="arch-card">
+            <h3>Live environment</h3>
+            <div class="env-line"><span class="k">Project</span><span class="v"><code>job-tracker</code></span></div>
+            <div class="env-line"><span class="k">Region</span><span class="v">ap-south-1 (Mumbai)</span></div>
+            <div class="env-line"><span class="k">Cost</span><span class="v">$0 / month</span></div>
+            <div class="env-line"><span class="k">Watchlist</span><span class="v">11 companies seeded</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="roadmap">
+        <h2>What’s next</h2>
+        <p class="lede">In order — each step is meant to unblock the one after it.</p>
+        <div class="roadmap">
+          <div class="rstep"><span class="n">1</span><div class="t"><strong>Add the two secrets</strong><span>Service-role key + Gemini key into <code>.env</code></span></div><span class="s"><span class="pill pending"><span class="dot"></span>you</span></span></div>
+          <div class="rstep"><span class="n">2</span><div class="t"><strong>Verify on real data</strong><span>Ingest → enrich → a ranked report; no fixes applied automatically</span></div><span class="s"><span class="pill pending"><span class="dot"></span>next</span></span></div>
+          <div class="rstep"><span class="n">3</span><div class="t"><strong>Build Qualification + Lane Engine</strong><span>Only after the verification report is approved</span></div><span class="s"><span class="pill frozen"><span class="dot"></span>waiting</span></span></div>
+          <div class="rstep"><span class="n">4</span><div class="t"><strong>Chrome extension</strong><span>Capture-only ingestion source, zero AI on-device</span></div><span class="s"><span class="pill frozen"><span class="dot"></span>waiting</span></span></div>
+          <div class="rstep"><span class="n">5</span><div class="t"><strong>Study the two prototype projects</strong><span>Resume Builder + Startup Outreach, before designing Application Assets</span></div><span class="s"><span class="pill frozen"><span class="dot"></span>waiting</span></span></div>
+          <div class="rstep"><span class="n">6</span><div class="t"><strong>Extract capabilities one at a time</strong><span>Resume → referral → founder outreach → cover letter → portfolio</span></div><span class="s"><span class="pill frozen"><span class="dot"></span>waiting</span></span></div>
+          <div class="rstep"><span class="n">7</span><div class="t"><strong>Rename to Application OS</strong><span>Once the capabilities have actually landed</span></div><span class="s"><span class="pill frozen"><span class="dot"></span>waiting</span></span></div>
+        </div>
+      </section>
+
+      <section id="files">
+        <h2>Where it lives</h2>
+        <p class="lede">Standing docs at the project root — this page summarizes them, it doesn’t replace them.</p>
+        <div class="file-grid">
+          <div class="file-card"><span class="name">decisions.md</span><span class="desc">Every decision, its reasoning, and what was rejected</span></div>
+          <div class="file-card"><span class="name">session-summary.md</span><span class="desc">A running log of what happened each session</span></div>
+          <div class="file-card"><span class="name">plans.md</span><span class="desc">The full architecture and product-evolution plan</span></div>
+          <div class="file-card"><span class="name">learnings.md</span><span class="desc">Technical choices, explained in plain language</span></div>
+          <div class="file-card"><span class="name">backlog.md</span><span class="desc">Deferred ideas and the sequenced roadmap</span></div>
+          <div class="file-card"><span class="name">.env</span><span class="desc">Where the two blocking secrets need to go</span></div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <footer class="note">
+    Generated as a reference snapshot from the project’s standing docs. If it ever disagrees with <code>decisions.md</code> or <code>session-summary.md</code>, trust those files — they’re the source of truth this page was built from.
+  </footer>
+</div>
