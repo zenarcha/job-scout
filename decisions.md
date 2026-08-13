@@ -4030,7 +4030,7 @@ prompt that was used," not "the model's output when that prompt ran" — and lon
   values that were there before (some rows at the default 15pt, others at 952pt/2084pt from an earlier
   unexplained auto-size). Verified both survive a `recalc.py` pass unchanged.
 
-## D-158 — AMENDS D-157: `v_jobs_public` was unreadable by `anon`; one column grant added (2026-08-14)
+## D-161 — AMENDS D-157: `v_jobs_public` was unreadable by `anon`; one column grant added (2026-08-14)
 Found by the first real anon query rather than by review: the Next.js app loaded and rendered
 `Could not load from Supabase — v_jobs_public: permission denied for table jobs`. The public read
 surface D-157 built and verified had never actually returned a row to the role it was built for.
@@ -4055,7 +4055,7 @@ surface D-157 built and verified had never actually returned a row to the role i
   with zero recruiter keys; `jobs?select=recruiter_email`, `jobs?select=hiring_manager` and
   `job_enrichments?select=raw_output` all return 401 `42501`; `POST /rest/v1/jobs` returns 401.
 
-## D-159 — The D-110 dashboard is built: one stylesheet, one set of formatting rules, three renderers (2026-08-14)
+## D-162 — The D-110 dashboard is built: one stylesheet, one set of formatting rules, three renderers (2026-08-14)
 `app/` now exists — a Next.js 16 app reading Supabase from the browser (D-110's shape, unchanged),
 porting `dashboard-live.html` behaviour rather than redesigning from it (D-156).
 - **`styles/dashboard.css` is now the single home for the CSS**, extracted out of
