@@ -1,16 +1,4 @@
 {
-  "_note": "Seed watchlist. ats_type/ats_slug are best-effort guesses — verify each board slug before Phase 4 ATS polling (open https://boards.greenhouse.io/{slug}, https://jobs.lever.co/{slug}, or https://jobs.ashbyhq.com/{slug}). Set ats_type to 'none' if a company isn't on a supported ATS; discovery still finds it via Apify company search. weight (1-5) boosts recommendation priority.",
-  "companies": [
-    { "company": "Anthropic",  "company_slug": "anthropic",  "ats_type": "greenhouse", "ats_slug": "anthropic",  "weight": 5, "active": true },
-    { "company": "OpenAI",     "company_slug": "openai",     "ats_type": "ashby",      "ats_slug": "openai",     "weight": 5, "active": true },
-    { "company": "Perplexity", "company_slug": "perplexity", "ats_type": "ashby",      "ats_slug": "perplexity", "weight": 5, "active": true },
-    { "company": "Cursor",     "company_slug": "cursor",     "ats_type": "ashby",      "ats_slug": "anysphere",  "weight": 5, "active": true },
-    { "company": "Lovable",    "company_slug": "lovable",    "ats_type": "none",       "ats_slug": null,         "weight": 5, "active": true },
-    { "company": "Vercel",     "company_slug": "vercel",     "ats_type": "greenhouse", "ats_slug": "vercel",     "weight": 4, "active": true },
-    { "company": "Canva",      "company_slug": "canva",      "ats_type": "lever",      "ats_slug": "canva",      "weight": 4, "active": true },
-    { "company": "Atlassian",  "company_slug": "atlassian",  "ats_type": "none",       "ats_slug": null,         "weight": 3, "active": true },
-    { "company": "HubSpot",    "company_slug": "hubspot",    "ats_type": "greenhouse", "ats_slug": "hubspot",    "weight": 3, "active": true },
-    { "company": "Figma",      "company_slug": "figma",      "ats_type": "greenhouse", "ats_slug": "figma",      "weight": 4, "active": true },
-    { "company": "Notion",     "company_slug": "notion",     "ats_type": "ashby",      "ats_slug": "notion",     "weight": 4, "active": true }
-  ]
+  "_note": "Reset to empty 2026-08-01 (see decisions.md D-32). The original 11 companies had no evidence they were actually remote-from-India friendly — never logged as a decision, just seeded. Add a company here ONLY when Sakshi has direct evidence it's remote-from-India friendly (a real posting seen, a documented remote policy, someone known working there remotely from India). weight (1-5) boosts recommendation priority. Remember: adding a row here does NOT make discovery search that company — a matching Apify Task must still be created manually (see apify/task-config.md), now with a title filter (see D-33).",
+  "companies": []
 }

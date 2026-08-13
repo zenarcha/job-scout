@@ -1,0 +1,62 @@
+[
+  {
+    "id": 2300100001,
+    "linkedin_id": 4450100001,
+    "title": "Product Manager, AI Platform",
+    "organization": "Acme AI",
+    "url": "https://in.linkedin.com/jobs/view/product-manager-ai-platform-at-acme-ai-4450100001",
+    "date_posted": "2026-07-09T10:00:00.000",
+    "date_created": "2026-07-09T11:00:00.123456",
+    "locations_derived": ["Remote (India)"],
+    "source": "linkedin",
+    "source_type": "jobboard",
+    "description_text": "We are hiring a Product Manager for our AI platform. Work from anywhere in India. You will write SQL, work with APIs, and run experiments. IIT/IIM preferred but not required.\n• SQL\n• A/B testing\n• LLM evaluation",
+    "recruiter_name": "Pooja Venkatesh",
+    "recruiter_url": "https://in.linkedin.com/in/pooja-venkatesh-14786717a"
+  },
+  {
+    "id": 2300100002,
+    "linkedin_id": 4450100002,
+    "title": "Senior Product Manager",
+    "organization": "Onsite Corp",
+    "url": "https://in.linkedin.com/jobs/view/senior-product-manager-at-onsite-corp-4450100002",
+    "date_posted": null,
+    "date_created": "2026-07-03T08:26:40.000",
+    "locations_derived": ["Bengaluru, India (On-site)"],
+    "source": "linkedin",
+    "source_type": "jobboard",
+    "description_text": "On-site role in our Bengaluru office. Hybrid, 3 days a week in office.",
+    "recruiter_name": null,
+    "recruiter_url": null
+  },
+  {
+    "id": 2300100003,
+    "linkedin_id": null,
+    "title": "Product Manager AI Platform",
+    "organization": "Acme AI",
+    "url": "https://boards.greenhouse.io/acmeai/jobs/2001",
+    "date_posted": "2026-07-09T09:00:00.000",
+    "date_created": "2026-07-09T09:30:00.000",
+    "locations_derived": ["Remote - India"],
+    "source": "greenhouse",
+    "source_type": "ats",
+    "description_text": "Product Manager for the AI platform. Remote, India eligible.",
+    "recruiter_name": null,
+    "recruiter_url": null
+  },
+  {
+    "id": null,
+    "linkedin_id": null,
+    "title": "Product Manager, No Stable Id",
+    "organization": "Unidentifiable Co",
+    "url": "https://in.linkedin.com/jobs/view/product-manager-no-stable-id",
+    "date_posted": "2026-07-09T10:00:00.000",
+    "date_created": "2026-07-09T10:30:00.000",
+    "locations_derived": ["Remote (India)"],
+    "source": "linkedin",
+    "source_type": "jobboard",
+    "description_text": "Remote India role whose record carries no stable identifier.",
+    "recruiter_name": null,
+    "recruiter_url": null
+  }
+]

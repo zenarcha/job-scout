@@ -1,0 +1,25 @@
+-- Fixes a defect in 0015 (D-157) found the moment the Next.js app first queried as anon:
+-- every request returned `permission denied for table jobs`, so `v_jobs_public` was
+-- unreadable by the only role that is supposed to read it.
+--
+-- Cause: 0015 set the view to `security_invoker = true`, which means the view body runs
+-- with the CALLER's privileges — and the body ends with
+--
+--     where j.dropped_reason is null and j.canonical_job_id is null
+--
+-- `dropped_reason` was deliberately left out of anon's column grants as "internal, not
+-- needed by the UI". That is true of the *output* and false of the *filter*: reading a
+-- column in a WHERE clause needs SELECT on it just as much as returning it does. The
+-- verification in D-157 checked the privilege listing rather than performing an anon read,
+-- so it confirmed the columns were absent without noticing one of them was load-bearing.
+--
+-- Fix: grant SELECT on that single column. It discloses nothing — the `jobs_public_read`
+-- policy already restricts anon to rows where `dropped_reason is null`, so the only value
+-- anon can ever read out of it is NULL. Both copies of recruiter PII (the four `jobs`
+-- columns and `job_enrichments.raw_output`) remain ungranted, and no write grant is added.
+--
+-- Rejected alternatives: dropping the WHERE clause from the view (it would change what
+-- service-role readers see, and the RLS policy only covers anon), and reverting the view
+-- to definer mode (contradicts D-145 and re-raises the advisor's ERROR — the exact option
+-- D-157 rejected).
+grant select (dropped_reason) on jobs to anon;

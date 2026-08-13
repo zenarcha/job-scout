@@ -1,60 +1,71 @@
-// Notification Service. High-priority matches ping Telegram instantly; Med/Low go in a
-// periodic digest. Every notified job is also upserted to Notion. Idempotent: a job is
-// notified once, guarded by a NotificationSent event (no notified_at column needed).
+// Notification Service — one Telegram message per qualifying job.
+//
+// D-58 removed the instant/digest split: it solved a volume problem that doesn't
+// exist at 1-2 relevant jobs/day, and two delivery paths meant two things to keep
+// in sync. D-59 removed the Notion upsert entirely.
+//
+// Two gates decide what reaches her:
+//   • priority ∈ {high, med} — `low` is computed and stored but never sent (D-65)
+//   • remote_type = 'remote_india' — D-76. Everything else is suppressed. Note this
+//     does NOT gate on the geo recheck's verdict: a job the recheck flags
+//     'ineligible' is still delivered, just marked. A false positive costs 30
+//     seconds of reading; a false negative costs a role she'd never know existed.
+//
+// Idempotent: a job is notified once, guarded by a NotificationSent event (D-16).
 import { db } from '../../lib/db.js';
 import { emitEvent } from '../../lib/events.js';
-import { formatJob, sendTelegram } from '../../lib/telegram.js';
-import { upsertJobPage } from '../../lib/notion.js';
-import type { Priority } from '../../lib/types.js';
+import { feedbackKeyboard, formatJob, sendTelegram } from '../../lib/telegram.js';
 
 async function notifiedIds(): Promise<Set<string>> {
   const { data } = await db().from('job_events').select('job_id').eq('type', 'NotificationSent');
   return new Set((data ?? []).map((r) => r.job_id as string).filter(Boolean));
 }
 
-// Canonical, fully-recommended jobs of the given priorities that haven't been notified.
-async function candidates(priorities: Priority[]): Promise<any[]> {
+// Canonical, fully-recommended, India-eligible jobs that haven't been notified.
+async function candidates(): Promise<any[]> {
   const done = await notifiedIds();
   const { data } = await db()
     .from('v_jobs_enriched')
     .select('*')
-    .in('priority', priorities)
+    .in('priority', ['high', 'med'])
+    .eq('remote_type', 'remote_india')
     .is('canonical_job_id', null);
   return (data ?? []).filter((r) => !done.has(r.id as string));
 }
 
-// Deliver one job to Telegram (optional) + Notion, then mark it notified.
-async function deliver(row: any, viaTelegram: boolean): Promise<void> {
-  try {
-    if (viaTelegram) await sendTelegram(formatJob(row));
-    await upsertJobPage(row);
-    await emitEvent({
-      jobId: row.id,
-      type: 'NotificationSent',
-      stage: 'notify',
-      payload: { priority: row.priority },
-    });
-  } catch (err: any) {
-    await emitEvent({ jobId: row.id, type: 'StageFailed', stage: 'notify', error: String(err?.message ?? err) });
-  }
-}
-
-// Instant path: High-priority new matches.
 export async function notifyNew(): Promise<{ sent: number }> {
-  const rows = await candidates(['high']);
-  for (const row of rows) await deliver(row, true);
-  return { sent: rows.length };
-}
+  const rows = await candidates();
+  let sent = 0;
 
-// Digest path: Med/Low matches bundled into a single Telegram message.
-export async function sendDigest(): Promise<{ sent: number }> {
-  const rows = await candidates(['med', 'low']);
-  if (rows.length === 0) return { sent: 0 };
+  for (const row of rows) {
+    try {
+      // Assumed-eligible jobs carry 👍/👎 so the "(assumed)" marker can be
+      // corrected (D-77). Explicitly-eligible ones need no correction affordance.
+      // `sendTelegram` returns false (it does NOT throw) when Telegram is unconfigured.
+      // Ignoring that return value wrote a NotificationSent event for a message that was
+      // never sent — and since that event is the permanent idempotency guard (D-16), the
+      // job could never be delivered later. Found on the first real run, 2026-08-07: two
+      // jobs were burned this way with no token set. This is D-99's mistake in the notify
+      // path — inferring success instead of recording the outcome — so the guard is only
+      // written when delivery actually happened.
+      const delivered = await sendTelegram(formatJob(row), feedbackKeyboard(row));
+      if (!delivered) continue; // stays a candidate; retried once Telegram is configured
+      await emitEvent({
+        jobId: row.id,
+        type: 'NotificationSent',
+        stage: 'notify',
+        payload: { priority: row.priority, geoExplicit: row.geo_explicit },
+      });
+      sent++;
+    } catch (err: any) {
+      await emitEvent({
+        jobId: row.id,
+        type: 'StageFailed',
+        stage: 'notify',
+        error: String(err?.message ?? err),
+      });
+    }
+  }
 
-  const header = `🗞️ <b>${rows.length} new job${rows.length > 1 ? 's' : ''}</b> (med/low priority)\n`;
-  await sendTelegram(header + rows.map(formatJob).join('\n\n'));
-
-  // Notion upsert + mark notified (Telegram already sent in the batch above).
-  for (const row of rows) await deliver(row, false);
-  return { sent: rows.length };
+  return { sent };
 }

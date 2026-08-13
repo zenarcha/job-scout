@@ -45,6 +45,30 @@ Apify (role + company) + ATS feeds ──▶ Discovery ──▶ job_events (bus
 | `npx tsx tests/discovery.test.ts` | offline discovery-logic checks (no creds) |
 | `npm run ingest -- --file <json> --source <src>` | ingest postings from a file |
 | `npm run ingest -- --run <apifyRunId> --source <src>` | ingest an Apify run |
+| `npm run dev` | dashboard at http://localhost:3000 |
+| `npm run build` | production build of the dashboard |
+| `npm run dashboard` | regenerate the standalone `dashboard-live.html` snapshot |
+
+## Dashboard
+A Next.js app in `app/` that reads Supabase **directly from the browser** using the anon key —
+no server layer, no API routes (D-110). It needs two extra env vars in `.env.local`:
+
+```
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+```
+
+Both are public by design and are compiled into the shipped bundle. What keeps the data safe is
+migration `0015` + `0016` (D-157): anon can read `v_jobs_public` and `remote_companies` and
+nothing else, and recruiter contact columns are excluded from its grants on `jobs` and
+`job_enrichments`. The **Remote Companies tab deliberately publishes recruiter contact details**
+(D-142/D-156) — that tab is the one thing on the site that is not safe to widen further.
+
+Three things render the same design and share one stylesheet (`styles/dashboard.css`) and one set
+of formatting rules (`lib/dashboardFormat.ts`): `dashboard-mock.html` (the design, D-93), the
+`npm run dashboard` snapshot (D-119), and this app.
+
+Deploying: import the repo at vercel.com and set the two `NEXT_PUBLIC_*` vars in project settings.
 
 ## Status
 - ✅ Phase 0 — scaffold, schema, AI abstraction
@@ -56,9 +80,9 @@ Apify (role + company) + ATS feeds ──▶ Discovery ──▶ job_events (bus
 - ⬜ Phase 9 — semantic search (deferred)
 
 ## Live environment
-- Supabase project **`job-tracker`** (`gwvrpdkiblozwdwoqsgd`, `ap-south-1`) — schema applied
-  (`0001` + additive lane-ready `0002`), watchlist seeded. `.env` pre-filled with URL + anon key;
-  add the two TODO secrets to run.
+- Supabase project **`job-tracker`** (`cdjgxrmeoqiogylveagr`, project swapped 2026-08-02, see
+  `decisions.md` D-36) — schema needs re-applying on the new project (`0001` + additive lane-ready
+  `0002`), watchlist re-seeded. `.env` URL updated; anon key + the two TODO secrets still needed.
 
 ## Direction
 This tracker is the foundation of a larger **AI Job Application OS** (evolve, don't rewrite). The

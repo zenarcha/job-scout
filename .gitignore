@@ -9,3 +9,7 @@ out/
 .DS_Store
 .vercel
 coverage/
+
+# Claude Code worktrees are scratch, not project state
+.claude/worktrees/
+*.tsbuildinfo

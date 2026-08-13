@@ -5,13 +5,22 @@ import type { AiMeta } from './types.js';
 
 export type EventType =
   | 'JobCreated'
+  | 'JobDropped'         // ingest pre-filter rejected it; the row is still persisted (D-72)
+  | 'JobUndropped'       // D-104: a narrowed filter disagreed with an earlier drop, reason cleared
   | 'ClassificationDone'
-  | 'ResumeMatchDone'
+  | 'GeoRecheckDone'     // D-75: second-pass geo verdict on an assumed-eligible job
+  | 'RemoteCheckDone'    // D-136: standalone remote-only pass for senior-titled jobs
   | 'SkillsDone'
   | 'SalaryParsed'
   | 'RecommendationDone'
-  | 'QualificationDone' // reserved for the future Qualification stage (Phase 2); unused now
   | 'NotificationSent'
+  | 'FeedbackReceived'   // D-77: a 👍/👎 tap arrived via the Telegram poller
+  | 'EnrichmentSkipped'  // D-98: the job is a duplicate or was dropped at ingest — no stage ran
+  // D-112: the job is real and the run proceeded, but ONE stage declined because its
+  // inputs were absent. Distinct from EnrichmentSkipped (whole job, decided upfront)
+  // and from StageFailed (the stage tried and broke). A skipped stage is not a
+  // failure — same reading as geo_recheck declining under D-75.
+  | 'StageSkipped'
   | 'StageFailed';
 
 export async function emitEvent(input: {
@@ -38,7 +47,15 @@ const RATE: Record<string, { in: number; out: number }> = {
   grok: { in: 0, out: 0 },
 };
 
-export async function recordAiUsage(input: { jobId: string | null; stage: string; meta: AiMeta }): Promise<void> {
+// `enrichmentId` ties the cost to the exact attempt that spent it — without it two
+// re-classifications of the same job are indistinguishable in the log. Callers must
+// therefore write the enrichment row FIRST and pass the id back in here.
+export async function recordAiUsage(input: {
+  jobId: string | null;
+  enrichmentId?: string | null;
+  stage: string;
+  meta: AiMeta;
+}): Promise<void> {
   const rate = RATE[input.meta.provider] ?? { in: 0, out: 0 };
   const cost =
     (input.meta.usage.prompt_tokens / 1_000_000) * rate.in +
@@ -46,6 +63,7 @@ export async function recordAiUsage(input: { jobId: string | null; stage: string
 
   await db().from('ai_usage').insert({
     job_id: input.jobId,
+    enrichment_id: input.enrichmentId ?? null,
     stage: input.stage,
     provider: input.meta.provider,
     model: input.meta.model,

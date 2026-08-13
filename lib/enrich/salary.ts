@@ -1,20 +1,37 @@
-// Salary PARSER (deterministic, no LLM). Extracts compensation only when explicitly stated;
-// otherwise returns status 'unknown'. We never estimate — accuracy over speculation.
+// Salary PARSER (deterministic, no LLM — D-12). Extracts compensation only when explicitly
+// stated; never estimates, because a wrong number erodes trust in the whole tool.
+// Status is three-way: 'stated' | 'not_mentioned' | 'unrecognizable_format'.
 import type { SalaryResult } from '../types.js';
 import { db } from '../db.js';
 import { CLASSIFIER_VERSION } from '../ai/AIService.js';
 import { writeEnrichment } from './writeEnrichment.js';
 import { emitEvent } from '../events.js';
+import { confirmRemoteCompany } from '../discovery/remoteCompanies.js';
 
-const UNKNOWN: SalaryResult = {
-  salary_min: null, salary_max: null, salary_currency: null, salary_period: null, salary_status: 'unknown',
-};
+const nullResult = (status: SalaryResult['salary_status']): SalaryResult => ({
+  salary_min: null, salary_max: null, salary_currency: null, salary_period: null, salary_status: status,
+});
+
+// Signals that the posting states an actual pay FIGURE the parser failed to read —
+// which is the only thing 'unrecognizable_format' should mean. Distinguishing that
+// from silence is the whole point of the three-way status: it makes the parser's own
+// failure rate measurable instead of invisible.
+//
+// Deliberately requires a DIGIT near the pay context. "Competitive salary and great
+// benefits" mentions pay but contains no number — the parser didn't fail there, there
+// was nothing to parse, so counting it as a failure would pollute the metric.
+const PAY_FIGURE = [
+  /[₹$£€]\s*\d/,                                                        // ₹18…, $120…
+  /\b(salary|compensation|ctc|pay|package|remuneration|stipend)\b[^.\n]{0,60}\d/i,
+  /\d[^.\n]{0,20}\b(lpa|lakhs?|lacs?|per\s+annum|k\s*(?:-|–|to)\s*\d)/i,
+];
+const mentionsPayFigure = (t: string) => PAY_FIGURE.some((re) => re.test(t));
 
 const num = (s: string) => Number(s.replace(/[,\s]/g, ''));
 const SEP = '(?:-|–|—|to|and)';
 
 export function parseSalary(text: string | undefined | null): SalaryResult {
-  if (!text) return UNKNOWN;
+  if (!text) return nullResult('not_mentioned');
   const t = text.replace(/ /g, ' ');
 
   // ── Indian LPA: "₹18–24 LPA", "18 to 24 LPA", "INR 20 lakhs per annum" ──
@@ -36,7 +53,8 @@ export function parseSalary(text: string | undefined | null): SalaryResult {
   const inrMonth = t.match(/₹\s*(\d[\d,]{3,})\s*(?:\/|per\s*)?\s*month/i);
   if (inrMonth) return { salary_min: num(inrMonth[1]!), salary_max: num(inrMonth[1]!), salary_currency: 'INR', salary_period: 'month', salary_status: 'stated' };
 
-  return UNKNOWN;
+  // Nothing matched. Was there a figure we failed to read, or simply no figure?
+  return nullResult(mentionsPayFigure(t) ? 'unrecognizable_format' : 'not_mentioned');
 }
 
 // Salary stage runner (no AI call, no ai_usage).
@@ -60,4 +78,42 @@ export async function runSalary(jobId: string): Promise<void> {
   });
 
   await emitEvent({ jobId, type: 'SalaryParsed', stage: 'salary', payload: { status: sal.salary_status } });
+
+  // D-144: snapshot the salary onto remote_companies, same "capture it permanently"
+  // framing as recruiter contact (D-140) — but only when there's a real figure to keep
+  // (never write 'not_mentioned'/'unrecognizable_format' onto the archive) and only for a
+  // company already AI-confirmed remote_india, same gating D-139 established. `classify`
+  // runs before `salary` in ORDER (pipeline.ts), so classify's own confirmRemoteCompany
+  // call has already created this row a moment earlier in the same enrichJob() run — this
+  // is a second, idempotent call that adds the salary fields on top.
+  if (sal.salary_status === 'stated') {
+    const { data: classifyRow } = await db()
+      .from('job_enrichments')
+      .select('remote_type')
+      .eq('job_id', jobId)
+      .eq('stage', 'classify')
+      .eq('is_active', true)
+      .maybeSingle();
+
+    if (classifyRow?.remote_type === 'remote_india') {
+      const { data: jobRow } = await db()
+        .from('jobs')
+        .select('company, company_slug, posting_url, role_title')
+        .eq('id', jobId)
+        .maybeSingle();
+
+      if (jobRow) {
+        await confirmRemoteCompany({
+          company: jobRow.company,
+          companySlug: jobRow.company_slug,
+          postingUrl: jobRow.posting_url,
+          roleTitle: jobRow.role_title,
+          salaryMin: sal.salary_min,
+          salaryMax: sal.salary_max,
+          salaryCurrency: sal.salary_currency,
+          salaryPeriod: sal.salary_period,
+        });
+      }
+    }
+  }
 }

@@ -47,10 +47,15 @@ export async function ingestPostings(
   for (const raw of postings) {
     const job = normalize(raw);
 
-    if (env.ingest.remoteFilter() && isObviouslyNonRemote(job)) {
-      summary.droppedNonRemote++;
-      continue;
-    }
+    // D-72: a rejected posting is PERSISTED with a reason rather than discarded.
+    // The old `continue` made the pre-filter's own false-negative rate invisible —
+    // there was no way to ask "what did the regex throw away, and was it right?".
+    // Dropped rows are excluded from enrichPending() so they cost no AI quota.
+    const droppedReason =
+      env.ingest.remoteFilter() && isObviouslyNonRemote(job)
+        ? 'ingest_filter:obviously_non_remote'
+        : null;
+    if (droppedReason) summary.droppedNonRemote++;
 
     const row = {
       source: job.source,
@@ -59,12 +64,14 @@ export async function ingestPostings(
       company: job.company ?? null,
       company_slug: job.companySlug,
       role_title: job.roleTitle ?? null,
+      posting_url: job.postingUrl ?? null,
       apply_url: job.applyUrl ?? null,
       location: job.location ?? null,
       posted_at: parseDate(job.postedAt),
       jd_raw: job.jdRaw ?? null,
       jd_clean: job.jdClean,
       parsed: job.parsed,
+      dropped_reason: droppedReason,
       recruiter_name: job.recruiterName ?? null,
       recruiter_linkedin: job.recruiterLinkedin ?? null,
       recruiter_email: job.recruiterEmail ?? null,
@@ -79,18 +86,36 @@ export async function ingestPostings(
 
     if (error) throw error;
 
+    // D-139/D-142: `remote_companies` confirmation used to happen here, as a by-product
+    // of ingest — but a posting surviving the weak location pre-filter is not the same as
+    // the AI confirming it's remote. That confirmation now fires from `classify`/
+    // `remote_check` once `remote_type` is actually known (see lib/discovery/
+    // remoteCompanies.ts). Ingest no longer touches that table at all.
+
     if (insertedRows && insertedRows.length > 0) {
       const jobId = insertedRows[0]!.id as string;
-      summary.inserted++;
-      await linkCanonical({
-        id: jobId,
-        companySlug: job.companySlug,
-        normTitle: String(job.parsed.norm_title ?? ''),
-        reliability: job.sourceReliability,
-      });
-      // Ensure a tracking row exists so the dashboard/pipeline can attach state.
-      await db().from('job_tracking').upsert({ job_id: jobId }, { onConflict: 'job_id', ignoreDuplicates: true });
-      await emitEvent({ jobId, type: 'JobCreated', stage: 'ingest', payload: { source: job.source } });
+
+      if (droppedReason) {
+        // Recorded for audit, but not linked into the canonical graph and not
+        // announced as a real find.
+        await emitEvent({
+          jobId,
+          type: 'JobDropped',
+          stage: 'ingest',
+          payload: { source: job.source, reason: droppedReason },
+        });
+      } else {
+        summary.inserted++;
+        await linkCanonical({
+          id: jobId,
+          companySlug: job.companySlug,
+          normTitle: String(job.parsed.norm_title ?? ''),
+          reliability: job.sourceReliability,
+        });
+        // D-42: no `job_tracking` row is created here any more — that table moved
+        // to the tracker module, which creates rows lazily on first action.
+        await emitEvent({ jobId, type: 'JobCreated', stage: 'ingest', payload: { source: job.source } });
+      }
     } else {
       // Duplicate: bump freshness only (source data stays immutable).
       summary.duplicates++;

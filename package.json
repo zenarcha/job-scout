@@ -1,5 +1,5 @@
 {
-  "name": "remote-pm-job-tracker",
+  "name": "remote-pm-job-scout",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -8,11 +8,16 @@
     "node": ">=20"
   },
   "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
     "typecheck": "tsc --noEmit",
     "ingest": "tsx scripts/run-ingest.ts",
     "enrich": "tsx scripts/run-enrich.ts",
     "dispatch": "tsx scripts/run-dispatch.ts",
     "notify": "tsx scripts/run-notify.ts",
+    "feedback:poll": "tsx scripts/run-feedback-poll.ts",
+    "dashboard": "tsx scripts/build-dashboard.ts",
     "test:golden": "tsx tests/golden/run.ts",
     "ats:poll": "tsx scripts/run-ats-poll.ts",
     "linkcheck": "tsx scripts/run-linkcheck.ts"
@@ -21,11 +26,16 @@
     "@supabase/supabase-js": "^2.45.0",
     "cheerio": "^1.0.0",
     "dotenv": "^16.4.5",
+    "next": "^16.3.0",
     "p-retry": "^6.2.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
     "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/node": "^22.5.0",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
     "tsx": "^4.19.0",
     "typescript": "^5.6.0"
   }

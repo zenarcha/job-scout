@@ -1,12 +1,11 @@
 // CLI: send notifications.
-//   npm run notify              # instant High-priority pings
-//   npm run notify -- --digest  # batched Med/Low digest
-import { notifyNew, sendDigest } from '../services/notify/notify.js';
+//   npm run notify
+// One message per qualifying job — D-58 removed the instant/digest split, so there
+// is no longer a --digest mode.
+import { notifyNew } from '../services/notify/notify.js';
 
-const digest = process.argv.includes('--digest');
-
-(digest ? sendDigest() : notifyNew())
-  .then((r) => console.log(digest ? 'Digest:' : 'Instant notify:', r))
+notifyNew()
+  .then((r) => console.log('Notify:', r))
   .catch((e) => {
     console.error(e);
     process.exit(1);

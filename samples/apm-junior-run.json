@@ -1,0 +1,148 @@
+[{
+  "id": 2294228787,
+  "date_posted": "2026-08-04T10:28:08",
+  "date_created": "2026-08-04T12:35:11.893812",
+  "title": "Associate Product Manager",
+  "organization": "Interview Kickstart",
+  "organization_url": "https://www.linkedin.com/school/interview-kickstart",
+  "date_valid_through": "2026-09-03T10:28:08",
+  "locations": [
+    {
+      "@type": "Place",
+      "address": {
+        "@type": "PostalAddress",
+        "addressCountry": "IN",
+        "addressLocality": "Bengaluru",
+        "addressRegion": null,
+        "streetAddress": null
+      },
+      "latitude": 12.976747,
+      "longitude": 77.57528
+    }
+  ],
+  "location_type": null,
+  "location_requirements": null,
+  "salary": null,
+  "employment_type": [
+    "FULL_TIME"
+  ],
+  "url": "https://in.linkedin.com/jobs/view/associate-product-manager-at-interview-kickstart-4448278783",
+  "source_type": "jobboard",
+  "source": "linkedin",
+  "source_domain": "in.linkedin.com",
+  "organization_logo": "https://media.licdn.com/dms/image/v2/C4D0BAQHlnXAPBmf6QA/company-logo_200_200/company-logo_200_200/0/1630577959071/interview_kickstart_logo?e=2147483647&v=beta&t=Fo9wKgc4J7nZubhN8Vp9H6kRiAsHOs-drW_cvCQSyRg",
+  "cities_derived": [
+    "Bengaluru"
+  ],
+  "counties_derived": [
+    "Bangalore North"
+  ],
+  "regions_derived": [
+    "Karnataka"
+  ],
+  "countries_derived": [
+    "India"
+  ],
+  "locations_derived": [
+    "Bengaluru, Karnataka, India"
+  ],
+  "timezones_derived": [
+    "Asia/Kolkata"
+  ],
+  "lats_derived": [
+    12.9767936
+  ],
+  "lngs_derived": [
+    77.590082
+  ],
+  "seniority": "Associate",
+  "direct_apply": false,
+  "no_jb_schema": null,
+  "ats_duplicate": false,
+  "linkedin_id": 4448278783,
+  "org_linkedin_slug": "interview-kickstart",
+  "org_linkedin_headcount": null,
+  "org_linkedin_website": null,
+  "org_linkedin_size": null,
+  "org_linkedin_slogan": null,
+  "org_linkedin_industry": null,
+  "org_linkedin_followers": null,
+  "org_linkedin_headquarters": null,
+  "org_linkedin_type": null,
+  "org_linkedin_founded_date": null,
+  "org_linkedin_specialties": null,
+  "org_linkedin_locations": null,
+  "org_linkedin_description": null,
+  "org_linkedin_recruitment_agency_derived": false,
+  "recruiter_name": "Pooja Venkatesh",
+  "recruiter_title": "7 Years in Tech Talent Acquisition | Product & Engineering Hiring | Strategic Talent Partner | Stakeholder Management | Scaling SaaS & FinTech Teams",
+  "recruiter_url": "https://in.linkedin.com/in/pooja-venkatesh-14786717a",
+  "ai_salary_currency": null,
+  "ai_salary_value": null,
+  "ai_salary_min_value": null,
+  "ai_salary_max_value": null,
+  "ai_salary_unit_text": null,
+  "ai_benefits": [
+    "Competitive Compensation Package"
+  ],
+  "ai_experience_level": "2-5",
+  "ai_work_arrangement": "Remote Solely",
+  "ai_work_arrangement_office_days": null,
+  "ai_remote_location": [
+    "Bengaluru, IN"
+  ],
+  "ai_remote_location_derived": [
+    "Bengaluru, Karnataka, India"
+  ],
+  "ai_key_skills": [
+    "Product Management",
+    "AI Application Development",
+    "Data Analysis",
+    "Problem Solving",
+    "Cross-functional Collaboration",
+    "Agile Methodology",
+    "Market Research",
+    "User Experience Design",
+    "Product Lifecycle Management",
+    "Requirement Definition"
+  ],
+  "ai_hiring_manager_name": null,
+  "ai_hiring_manager_email_address": null,
+  "ai_core_responsibilities": "Support the end-to-end product lifecycle from discovery to delivery while collaborating with engineering and design teams. Gather user feedback and data to define product goals, success metrics, and release plans.",
+  "ai_requirements_summary": "Requires a degree in Business, Marketing, or Computer Science with 1-3 years of experience in product or growth roles. Mandatory hands-on experience building AI-powered applications using tools like Claude, Supabase, and Vercel.",
+  "ai_working_hours": 40,
+  "ai_employment_type": [
+    "FULL_TIME"
+  ],
+  "ai_job_language": "English",
+  "ai_visa_sponsorship": false,
+  "ai_keywords": [
+    "AI",
+    "Claude",
+    "Supabase",
+    "Vercel",
+    "Lovable",
+    "AI Voice Bots",
+    "AI Support Agents",
+    "Agile",
+    "Sprint Planning",
+    "Product Discovery",
+    "Product Management",
+    "Technical Interviews",
+    "Career Accelerator",
+    "Data-Driven",
+    "User Experience"
+  ],
+  "ai_taxonomies_a": [
+    "Software",
+    "Technology",
+    "Education",
+    "Management & Leadership",
+    "Data & Analytics"
+  ],
+  "ai_education": [
+    "bachelor degree",
+    "postgraduate degree"
+  ],
+  "description_text": "Let's start with who we are:\nInterviews can be hard. And when it comes to the top tech companies like Google, Facebook, Netflix, etc., they can be downright brutal. Most candidates don’t make it simply because they don’t prepare well enough. IK helps candidates nail the toughest tech interviews. At IK, current and former hiring managers at these top companies take candidates through an intense prep course to prepare them to crack the toughest Technical interviews. You could think of us as ‘the everything store’ for career transitions and interview skill development.\n\nHow do we do that, you ask?\nWe have a structured way of helping folks crack interviews-\nCareer accelerator course\nEnd-to-end courses + platform\nMore than 750+ instructors from Google, FB, Amazon, Netflix, Dropbox, and other top Silicon Valley companies.\nAnd, to date, we have trained over 27000+ engineers!\nWhat’s more exciting is that we are completely remote and hiring the best people we can find regardless of geo.\n\nSounds interesting? Then here’s some more information about the role\n\nPosition Overview\nWe’re looking for an Associate Product Manager (APM) to join our Product Management team at IK. In this role, you’ll support the discovery, development, and improvement of products that help users succeed in their career journeys. You’ll work closely with engineering, design, and other cross-functional teams to define problems, shape solutions, and deliver meaningful user experiences.\nThis role is ideal for someone early in their product career who is curious, structured in their thinking, and excited to learn how great products are built\n\nResponsibilities:\nSupport the end-to-end product lifecycle—from problem discovery to delivery and iteration\nWork with engineers and designers to define requirements, clarify scope, and prioritize work\nGather and synthesize user feedback, product data, and internal inputs to inform decisions\nHelp define product goals, success metrics, and release plans\nAssist with competitive research and market understanding to improve product direction\nParticipate in agile ceremonies such as sprint planning, stand-ups, and retrospectives\nAdvocate for user needs while balancing business and technical constraints\n\nWhat would Excite us :\nBachelor’s or Master’s degree in Business, Marketing, Computer Science, or a related field.\n1-3 years of experience in product management, business analysis, or a growth-focused role in a tech environment.\nHands-on AI experience is mandatory. Candidates should have built AI-powered applications or workflows using tools like Claude, Supabase, Vercel, Lovable (or similar), be data-driven, and be able to demonstrate their contributions; experience with AI Voice Bots or AI Support Agents is a strong plus.\nStrong analytical and problem-solving skills with a data-driven approach.\nExcellent communication and collaboration skills for effective cross-functional teamwork.\nA deep interest in technology, product development, and market trends.\nAgile and adaptable, with the ability to thrive in a fast-paced and evolving tech landscape.\n\nWhat would excite you?\nJoin a forward-thinking company where innovation and growth are paramount.\nCollaborate with a world-class team on impactful projects.\nPlay a key role in the direction and success of diverse tech products.\nEnjoy a competitive compensation package in a supportive and dynamic work environment\nComplete ownership; there is minimal management and extreme autonomy"
+}]

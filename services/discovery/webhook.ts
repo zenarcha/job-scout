@@ -7,7 +7,7 @@
 //       "resource":{{resource}},"eventData":{{eventData}}}
 import { env } from '../../lib/config.js';
 import { emitEvent } from '../../lib/events.js';
-import { fetchDatasetItems, fetchRunDataset, mapApifyItem } from '../../lib/discovery/apify.js';
+import { fetchDatasetItems, fetchRunDataset, mapFantasticJobsItem } from '../../lib/discovery/apify.js';
 import { ingestPostings } from './ingest.js';
 import type { RawPosting } from '../../lib/types.js';
 
@@ -31,8 +31,15 @@ export async function handleApifyWebhook(input: {
     else if (runId) items = (await fetchRunDataset(runId)).items;
     else return { status: 400, body: { error: 'no runId or datasetId in payload' } };
 
+    // D-137 BUG FIX, not a rename: this called `mapApifyItem` — the retired curious_coder
+    // mapper — from D-121 until now. D-121 switched discovery to fantastic-jobs but never
+    // updated this file. The two payloads share no field names, and `mapApifyItem` returns
+    // null when it finds no id, so a real fantastic-jobs delivery here would have mapped
+    // EVERY item to null, ingested nothing, and still returned HTTP 200. It stayed dormant
+    // only because D-134's recurring Apify Schedule was never switched on, so nothing has
+    // ever POSTed here for real. Exactly the silent-success shape D-121 exists to record.
     const postings = items
-      .map((it) => mapApifyItem(it, source))
+      .map((it) => mapFantasticJobsItem(it, source))
       .filter((p): p is RawPosting => p !== null);
 
     const summary = await ingestPostings(postings, { runId, source });
