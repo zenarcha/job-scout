@@ -3898,6 +3898,11 @@ Closes the open item D-155 left. Sakshi asked to "get the app up"; three paths w
   recruiters named on it.
 
 ## D-157 — `v_jobs_public` built, closing D-115; a second, undocumented copy of recruiter PII found in `job_enrichments.raw_output`; defense-in-depth grant design chosen and applied (2026-08-14, early hours)
+> **AMENDED by D-161 (2026-08-14, evening).** The surface described below never returned a row to
+> `anon` — the invoker-mode view filters on `jobs.dropped_reason`, which was excluded from the column
+> grants, so every anon read failed with `permission denied for table jobs`. The "verified" claim
+> below was made against the privilege *listing*, not against an actual anon read. Migration `0016`
+> fixes it. The PII conclusions below all still hold.
 D-115 has been open since 2026-08-07. D-156 made it blocking, so it was built.
 - **Built and live:** `v_jobs_public` (`supabase/migrations/0015_public_dashboard_access.sql`,
   applied to `gwvrpdkiblozwdwoqsgd`) — same joins, filters and coalescing as `v_jobs_enriched`
@@ -4030,7 +4035,7 @@ prompt that was used," not "the model's output when that prompt ran" — and lon
   values that were there before (some rows at the default 15pt, others at 952pt/2084pt from an earlier
   unexplained auto-size). Verified both survive a `recalc.py` pass unchanged.
 
-## D-161 — AMENDS D-157: `v_jobs_public` was unreadable by `anon`; one column grant added (2026-08-14)
+## D-161 — AMENDS D-157: `v_jobs_public` was unreadable by `anon`; one column grant added (2026-08-14, evening)
 Found by the first real anon query rather than by review: the Next.js app loaded and rendered
 `Could not load from Supabase — v_jobs_public: permission denied for table jobs`. The public read
 surface D-157 built and verified had never actually returned a row to the role it was built for.
@@ -4055,7 +4060,7 @@ surface D-157 built and verified had never actually returned a row to the role i
   with zero recruiter keys; `jobs?select=recruiter_email`, `jobs?select=hiring_manager` and
   `job_enrichments?select=raw_output` all return 401 `42501`; `POST /rest/v1/jobs` returns 401.
 
-## D-162 — The D-110 dashboard is built: one stylesheet, one set of formatting rules, three renderers (2026-08-14)
+## D-162 — The D-110 dashboard is built: one stylesheet, one set of formatting rules, three renderers (2026-08-14, evening)
 `app/` now exists — a Next.js 16 app reading Supabase from the browser (D-110's shape, unchanged),
 porting `dashboard-live.html` behaviour rather than redesigning from it (D-156).
 - **`styles/dashboard.css` is now the single home for the CSS**, extracted out of

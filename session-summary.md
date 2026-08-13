@@ -3556,3 +3556,102 @@ values that were there before.
 
 *Before starting next session: read the decision log and this summary entry fresh — don't trust a
 memory snapshot of what was decided.*
+
+---
+
+## Session 37 — 2026-08-14, evening (D-110's dashboard built for real; the public read surface turned out never to have worked)
+
+### What happened this session
+
+**The Next.js app exists.** `app/` is now a real Next.js 16 app reading Supabase directly from the
+browser via the anon key — D-110's shape, unchanged, no server layer and no API routes. It is a
+*port* of `dashboard-live.html`, not a redesign from it (D-156's instruction): same two tabs, same
+filter groups, same defaults (every verdict on; Remote + Not checked on, On-site off; "Right for me"
+on, Stretch/Senior off; every Industry chip on; the three exclusions off), same wording, same
+"absent is not negative" rules. Built, typechecked, production-built and driven in a real browser
+against live data: 5 junior-titled jobs across 4 companies, 29 tracked remote companies, detail pane,
+explain modals, Escape-to-close, and every filter group verified to produce the counts the snapshot
+produces.
+
+**Two things got exactly one home each, and that was the main design work.** The snapshot generator's
+own header already claimed the styling had "exactly one home" — copying the CSS into the app would
+have quietly made that false. So the stylesheet was extracted out of `dashboard-mock.html` into
+`styles/dashboard.css`, which the mock now `<link>`s, the snapshot inlines at build time, and the app
+imports. The same move for presentation logic: `lib/dashboardFormat.ts` holds verdict labels, salary
+formatting, `daysAgo`, blockers, and the remote/experience buckets, and **returns data, never
+markup** — a helper returning HTML would only have been usable by the snapshot, which is exactly how
+the drift starts. `scripts/build-dashboard.ts` was refactored onto both and re-run; the regenerated
+snapshot differs only in timestamps, day counts, `remote_type=other` → `not_remote` (D-150 — the
+committed snapshot predated it) and the CSS comment move. **No structural change, which is the
+evidence the refactor preserved behaviour.**
+
+**The find of the session: `v_jobs_public` had never returned a row to `anon`.** The app's very first
+load rendered `Could not load from Supabase — v_jobs_public: permission denied for table jobs`. The
+public read surface D-157 built, granted and "verified" the night before was unusable by the only
+role it exists for. Cause: `security_invoker = true` runs the view body with the *caller's*
+privileges, and the body ends `where j.dropped_reason is null and j.canonical_job_id is null` —
+`dropped_reason` had been excluded from anon's column grants as "internal, not needed by the UI",
+which is true of the *output* and false of the *filter*. D-157's verification checked the privilege
+*listing* and confirmed the right columns were absent; it never issued a read as anon, so it proved a
+claim about what's missing rather than about what works. Fixed by `0016` (one column grant,
+disclosing nothing — the row policy already restricts anon to rows where that column is NULL), and
+this time verified **by querying as anon**: `v_jobs_public` returns zero recruiter keys;
+`jobs?select=recruiter_email`, `jobs?select=hiring_manager` and `job_enrichments?select=raw_output`
+all return 401/`42501`; `POST /rest/v1/jobs` returns 401. Security advisors clean — no ERROR, no
+WARN, only the intended INFO-level default-deny notices. → **D-161**, amending D-157.
+
+**Two content changes flagged rather than made silently.** The Remote Companies PII banner said the
+file "should NOT be shared without redacting it first" — on a public URL that instruction is simply
+false, since the page *is* shared. Reworded to state what the tab holds, where the data came from
+(public job postings) and that it is publicly reachable. It still only warns the viewer, which is
+what D-156 already flagged as insufficient. Separately, the snapshot's "no description stored"
+fallback was markup run through `esc()` and rendered a literal `<em>` on screen — fixed in both
+renderers.
+
+**Whole tree committed and pushed.** Sakshi chose committing everything over a minimal deploy-only
+commit, on the argument that the tree Vercel builds should be the tree that typechecks locally; a
+partial commit would have built new app code against HEAD's older `lib/`. Two commits pushed to
+`github.com/zenarcha/job-scout`.
+
+**A parallel session took D-158–D-160 mid-flight.** The golden-dataset xlsx work logged three
+decisions while this one was running, so this session's entries were renumbered to D-161/D-162 after
+re-grepping the file. Commit `c3870fd`'s message still cites the old numbers; `decisions.md` is
+correct and a follow-up commit records the discrepancy.
+
+### Decisions this session
+- **D-161** — AMENDS D-157: `v_jobs_public` was unreadable by `anon`; `0016` grants SELECT on the one
+  load-bearing column. Rejected: dropping the view's `WHERE` (changes what service-role sees) and
+  reverting to definer mode (contradicts D-145, the option D-157 already rejected).
+- **D-162** — the dashboard is built; one stylesheet + one formatting module + three renderers; the
+  PII banner reworded for a public URL; the filtered-away detail pane stays closed on purpose.
+- Pointer added to **D-157** marking it amended.
+
+### Built this session
+- `app/` — `layout.tsx`, `page.tsx`, and `components/{JobCard,JobDetail,CompanyCard,FilterChip}.tsx`.
+- `lib/supabaseBrowser.ts` (anon client + typed fetch, reads `v_jobs_public` **never**
+  `v_jobs_enriched`), `lib/dashboardFormat.ts`, `styles/dashboard.css`, `next.config.mjs`.
+- `supabase/migrations/0016_v_jobs_public_dropped_reason_grant.sql` — applied, verified as anon.
+- `.env.example` + `.env.local` gain the two `NEXT_PUBLIC_*` vars; README gains a Dashboard section;
+  `.claude/launch.json` for the dev server; `*.tsbuildinfo` and `.claude/worktrees/` gitignored.
+
+### Next steps
+1. **Deploy (Sakshi's step, nothing else blocks it).** Import `github.com/zenarcha/job-scout` at
+   vercel.com and set `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY` in project
+   settings. Claude cannot do the OAuth login.
+2. **Decide the "Hiring now" contrast bug.** `#004440` on `--secondary-c` (`#00504c` in dark mode) is
+   dark-on-dark and effectively unreadable. Predates this session (D-144's styling), left alone rather
+   than restyling a decided element — but it now ships on a public page. One-line fix.
+3. **Consider stripping recruiter keys from `raw_output` before storing** rather than only defending
+   at the grant layer — carried from Session 35, still untouched.
+4. **README's "Live environment" section is stale** — it names project `cdjgxrmeoqiogylveagr`, not the
+   canonical `gwvrpdkiblozwdwoqsgd`, and describes a migration state that no longer exists.
+5. **Pre-existing `npm audit` finding:** `undici` 7.28.0 (high) reaches the tree via `cheerio`, not via
+   anything added this session. Unfixed; `npm audit fix` would bump `cheerio`.
+6. **Still carried over, untouched:** D-149's implementation, the stale comment at
+   `lib/discovery/apify.ts:65`, the 3 inconclusive "Remote OK" cases (Pocket FM, EOK Gems, Netomi),
+   and D-71/D-149's golden eval harness (`tests/golden/fixtures.ts` + `run.ts`) — still not built,
+   still blocking D-153's baseline run. D-150's rename and the stray worktree are both **done**; the
+   worktree directory is empty and is now gitignored.
+
+*Before starting next session: read the decision log and this summary entry fresh — don't trust a
+memory snapshot of what was decided.*

@@ -1461,3 +1461,32 @@ one is what the surface was built for. The first was true the whole time.
 Cheap habit that would have caught it in seconds: after any grant/policy/view change, issue one real
 request as the target role — `curl` against `/rest/v1/<surface>` with the anon key — before declaring
 it verified. Same family as "read the error, not the docs": exercise it, don't reason about it.
+
+## Why the dashboard's shared code returns data instead of HTML
+
+Three different things now draw the same job board: the hand-made design mock, a script that bakes a
+one-off HTML file from the database, and the real web app. All three need the same small answers —
+what colour and label a verdict gets, how a salary is written out, how "posted 13 days ago" is
+phrased, which warnings a job earns.
+
+Those answers now live in one file (`lib/dashboardFormat.ts`) that all three call. The choice worth
+recording is that this file hands back **plain facts** — the words `"Probably not"` and the style
+name `"no"` — and never hands back finished HTML.
+
+**Why that matters.** The old script built its answers as ready-made snippets of HTML, e.g. the
+literal text `<span class="sal soft">not stated</span>`. That is convenient for something that
+writes an HTML file and useless to the web app, which builds its screen a completely different way.
+Had the shared file kept returning HTML, the app would have had to keep its own second copy of every
+one of those rules — and a second copy is a copy that drifts. Six months later the file says
+"Probably not" and the app says "Unlikely" and nobody knows which is right.
+
+**The tradeoff, honestly.** Returning plain facts is slightly more work at each of the three call
+sites: each has to wrap the words in its own markup rather than pasting a finished snippet. That is
+the cost, and it is paid once per place. What it buys is that there is exactly one file to change
+when a label changes, and no way for the three renderings to disagree.
+
+**How this was checked rather than assumed.** After moving the script onto the shared file, the
+one-off HTML snapshot was regenerated and compared against the committed one. The only differences
+were timestamps, day counts and a rename that had already happened elsewhere — no structural change
+at all. That comparison is the evidence the move didn't quietly alter anything; without it, "I only
+refactored it" would just be a claim.
