@@ -1,0 +1,830 @@
+<style>
+  :root {
+    --surface:#f4fafd; --lowest:#ffffff; --low:#eef5f7; --container:#e8eff1;
+    --ink:#161d1f; --ink-var:#584140; --outline:#8c706f; --outline-sub:#e0bfbd;
+    --primary:#ae2f34; --primary-c:#ffdad8; --on-primary-c:#6d0010;
+    --secondary:#006a65; --secondary-c:#d8f6f2;
+    --yes-t:#2e7d32; --yes-b:#e8f5e9; --yes-br:#c8e6c9;
+    --maybe-t:#a35300; --maybe-b:#fff3e0; --maybe-br:#ffe0b2;
+    --no-t:#6b5a58; --no-b:#f1e9e8; --no-br:#ddc9c7;
+    --sans:-apple-system,"Segoe UI",ui-sans-serif,system-ui,sans-serif;
+    --mono:ui-monospace,"SFMono-Regular",Menlo,monospace;
+    --r-sm:8px; --r-md:12px; --r-lg:16px;
+  }
+  @media (prefers-color-scheme: dark){:root{
+    --surface:#14181a; --lowest:#0d1011; --low:#1b2022; --container:#20262a;
+    --ink:#ebf2f4; --ink-var:#d8c1bf; --outline:#a68a88; --outline-sub:#4a3838;
+    --primary:#ffb3b0; --primary-c:#6d0010; --on-primary-c:#ffdad8;
+    --secondary:#5dd9d0; --secondary-c:#00504c;
+    --yes-t:#8bd18f; --yes-b:#16281a; --yes-br:#2e4a33;
+    --maybe-t:#ffb877; --maybe-b:#2e2110; --maybe-br:#4d3a1c;
+    --no-t:#b9a29f; --no-b:#241d1c; --no-br:#3a2e2c;}}
+  :root[data-theme="dark"]{
+    --surface:#14181a; --lowest:#0d1011; --low:#1b2022; --container:#20262a;
+    --ink:#ebf2f4; --ink-var:#d8c1bf; --outline:#a68a88; --outline-sub:#4a3838;
+    --primary:#ffb3b0; --primary-c:#6d0010; --on-primary-c:#ffdad8;
+    --secondary:#5dd9d0; --secondary-c:#00504c;
+    --yes-t:#8bd18f; --yes-b:#16281a; --yes-br:#2e4a33;
+    --maybe-t:#ffb877; --maybe-b:#2e2110; --maybe-br:#4d3a1c;
+    --no-t:#b9a29f; --no-b:#241d1c; --no-br:#3a2e2c;}
+  :root[data-theme="light"]{
+    --surface:#f4fafd; --lowest:#ffffff; --low:#eef5f7; --container:#e8eff1;
+    --ink:#161d1f; --ink-var:#584140; --outline:#8c706f; --outline-sub:#e0bfbd;
+    --primary:#ae2f34; --primary-c:#ffdad8; --on-primary-c:#6d0010;
+    --secondary:#006a65; --secondary-c:#d8f6f2;
+    --yes-t:#2e7d32; --yes-b:#e8f5e9; --yes-br:#c8e6c9;
+    --maybe-t:#a35300; --maybe-b:#fff3e0; --maybe-br:#ffe0b2;
+    --no-t:#6b5a58; --no-b:#f1e9e8; --no-br:#ddc9c7;}
+
+  *{box-sizing:border-box}
+  body{font-family:var(--sans);background:var(--surface);color:var(--ink);margin:0;
+    padding:14px 16px 22px;-webkit-font-smoothing:antialiased}
+
+  .topbar{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  h1{font-size:18px;font-weight:700;letter-spacing:-.01em;margin:0}
+  h1 .dot{color:var(--primary)}
+  .count{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:12px;color:var(--ink-var)}
+  .note{display:flex;gap:8px;background:var(--low);border:1px solid var(--outline-sub);
+    border-radius:var(--r-md);padding:7px 11px;margin:8px 0;font-size:12px;color:var(--ink-var);line-height:1.5}
+  .note strong{color:var(--ink)}
+  code{font-family:var(--mono);font-size:11px;background:var(--container);padding:1px 4px;border-radius:4px}
+  .prop{font-size:9px;text-transform:uppercase;letter-spacing:.05em;font-weight:700;color:var(--primary);
+    border:1px solid var(--primary);border-radius:999px;padding:0 5px;vertical-align:middle;white-space:nowrap}
+
+  .filterbar{display:flex;flex-wrap:wrap;gap:6px;padding:8px 10px;background:var(--lowest);
+    border:1px solid var(--outline-sub);border-radius:var(--r-lg);margin-bottom:12px;align-items:center}
+  .fgroup{display:flex;align-items:center;gap:4px;padding-right:8px;border-right:1px solid var(--outline-sub)}
+  .flabel{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-var)}
+  .fchip{font-size:11.5px;padding:3px 8px;border-radius:999px;border:1px solid var(--outline-sub);
+    color:var(--ink-var);background:var(--lowest);cursor:pointer;white-space:nowrap;font-family:inherit}
+  .fchip.active{background:var(--primary-c);color:var(--on-primary-c);border-color:transparent;font-weight:600}
+  .fchip.more{border-style:dashed;font-weight:600}
+
+  /* Side-by-side held down to 640px so a narrow pane still shows the split */
+  .split{display:grid;grid-template-columns:minmax(240px,.6fr) minmax(0,1fr);gap:12px;align-items:start}
+  @media (max-width:640px){.split{grid-template-columns:1fr}.pane{position:static!important;max-height:none!important}}
+  .pane{border:1px solid var(--outline-sub);border-radius:var(--r-lg);background:var(--lowest);
+    max-height:calc(100vh - 34px);overflow-y:auto;position:sticky;top:14px}
+  .listpane{padding:8px}
+  .detailpane{padding:20px 24px 26px}
+
+  .co-head{display:flex;align-items:center;gap:7px;margin:12px 4px 6px}
+  .co-head:first-child{margin-top:2px}
+  .co-head h2{font-size:11px;font-weight:700;margin:0;color:var(--ink-var);text-transform:uppercase;letter-spacing:.05em}
+  .co-head .line{flex:1;height:1px;background:var(--outline-sub)}
+
+  .card{background:transparent;border:1px solid transparent;border-radius:var(--r-md);padding:10px 11px;
+    cursor:pointer;display:block;width:100%;text-align:left;font:inherit;color:inherit}
+  .card:hover{background:var(--low)}
+  .card.selected{background:var(--low);border-color:var(--outline-sub);box-shadow:inset 3px 0 0 var(--primary)}
+  .card:focus-visible{outline:2px solid var(--primary);outline-offset:-2px}
+  .card.viewed .job-title{color:var(--ink-var);font-weight:600}
+  .card-top{display:flex;align-items:flex-start;gap:7px;margin-bottom:4px}
+  .job-title{font-size:14px;font-weight:700;margin:0;flex:1;text-wrap:balance;line-height:1.3}
+
+  .verdict{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;
+    padding:3px 7px;border-radius:999px;border:1px solid transparent;white-space:nowrap}
+  .verdict.yes{color:var(--yes-t);background:var(--yes-b);border-color:var(--yes-br)}
+  .verdict.maybe{color:var(--maybe-t);background:var(--maybe-b);border-color:var(--maybe-br)}
+  .verdict.no{color:var(--no-t);background:var(--no-b);border-color:var(--no-br)}
+  .verdict.lg{font-size:13px;padding:7px 15px;letter-spacing:.05em}
+
+  .summary{font-size:12px;line-height:1.45;color:var(--ink);margin:0 0 6px;
+    border-left:2px solid var(--secondary);padding-left:8px}
+  .meta{font-size:11px;color:var(--ink-var);display:flex;flex-wrap:wrap;gap:3px 5px;margin-bottom:5px}
+  .sep{opacity:.4}
+  .tags{display:flex;flex-wrap:wrap;gap:4px}
+  .tag{font-size:10.5px;padding:2px 7px;border-radius:999px;background:var(--container);
+    color:var(--ink-var);border:1px solid var(--outline-sub)}
+  .tag.ind{color:var(--secondary);background:var(--secondary-c);border-color:transparent;font-weight:600}
+  .tag.blk{color:var(--maybe-t);background:var(--maybe-b);border-color:var(--maybe-br);font-weight:600}
+  .sal{font-family:var(--mono);font-variant-numeric:tabular-nums}
+  .sal.soft{font-style:italic;font-family:var(--sans)}
+
+  /* ===== TIER 1 — decide in 3 seconds ===== */
+  .tier1{border:1px solid var(--outline-sub);border-radius:var(--r-md);background:var(--low);
+    padding:15px 17px;margin-bottom:20px}
+  .t1-top{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:11px}
+  .t1-q{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-var)}
+  .contact-chip{font-size:11px;font-weight:600;padding:4px 10px;border-radius:999px;
+    border:1px solid var(--secondary);color:var(--secondary);margin-left:auto}
+  .contact-chip.none{border-color:var(--outline-sub);color:var(--ink-var);font-weight:400;font-style:italic}
+  .t1-why{font-size:14px;line-height:1.55;margin:0}
+  .blockers{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:7px}
+  .blockers li{font-size:12.5px;line-height:1.45;padding:7px 11px;border-radius:var(--r-sm);
+    background:var(--maybe-b);border:1px solid var(--maybe-br);color:var(--maybe-t);
+    display:flex;gap:8px;align-items:flex-start}
+  .blockers li b{font-weight:700}
+
+  /* ===== TIER 3 — what is this job (now below the actions) ===== */
+  .tier2{border-top:1px solid var(--outline-sub);padding-top:18px;margin-bottom:22px}
+  .t2-summary{font-size:15px;line-height:1.6;margin:0 0 13px;max-width:62ch}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+  .chip{font-size:12.5px;padding:5px 12px;border-radius:999px;border:1px solid var(--outline-sub);background:var(--lowest)}
+  .chip.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+  .chip.soft{color:var(--ink-var);font-style:italic}
+  .chip.ind{color:var(--secondary);background:var(--secondary-c);border-color:transparent;font-weight:600}
+  .skills-head{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+    color:var(--ink-var);margin:0 0 7px;display:flex;align-items:center;gap:7px}
+  .skills{display:flex;flex-wrap:wrap;gap:5px}
+  .sk{font-size:12px;padding:4px 10px;border-radius:999px;border:1px solid var(--outline-sub);
+    background:var(--lowest);color:var(--ink-var)}
+  .sk.have{border-color:var(--yes-br);background:var(--yes-b);color:var(--yes-t);font-weight:600}
+  .sk.gap{border-style:dashed}
+
+  /* ===== TIER 2 — act (immediately after the verdict) ===== */
+  .tier3{margin-bottom:22px}
+  .actions{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px}
+  .btn{font-size:13px;font-weight:600;padding:8px 16px;border-radius:999px;border:1px solid var(--outline-sub);
+    background:var(--lowest);color:var(--ink);cursor:pointer;text-decoration:none;display:inline-block;font-family:inherit}
+  .btn.primary{background:var(--primary);color:var(--lowest);border-color:transparent}
+  .btn.icon{padding:8px 12px}
+  .contact-box{font-size:12.5px;line-height:1.7;color:var(--ink-var)}
+  .contact-box .k{display:inline-block;min-width:96px;color:var(--ink-var)}
+  .contact-box .v{color:var(--ink)}
+  .contact-box a{color:var(--primary)}
+  .contact-empty{font-size:12.5px;color:var(--ink-var);font-style:italic}
+
+  /* ===== TIER 4 — full JD ===== */
+  .tier4{border-top:1px solid var(--outline-sub);padding-top:18px}
+  .sec{font-size:15px;font-weight:700;margin:0 0 10px}
+  .jd{font-size:14px;line-height:1.7;max-width:66ch}
+  .jd p{margin:0 0 12px}
+  .jd h4{font-size:13.5px;font-weight:700;margin:18px 0 6px}
+  .jd ul{margin:0 0 12px;padding-left:20px}
+  .jd li{margin-bottom:4px}
+  .jd-src{font-size:11px;color:var(--ink-var);margin-top:18px;padding-top:10px;
+    border-top:1px dashed var(--outline-sub);max-width:66ch}
+  .fixture{color:var(--ink-var);font-style:italic;font-size:12.5px}
+
+  .id-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .logo{width:38px;height:38px;border-radius:var(--r-sm);background:var(--container);
+    border:1px solid var(--outline-sub);display:flex;align-items:center;justify-content:center;
+    font-weight:700;font-size:14px;color:var(--ink-var);flex:0 0 auto}
+  .id-row .co{font-size:13.5px;font-weight:600}
+  .id-row .src{font-size:11px;color:var(--ink-var)}
+  .detailpane h2{font-size:24px;font-weight:700;margin:0 0 5px;letter-spacing:-.015em;text-wrap:balance;line-height:1.2}
+  .subline{font-size:13px;color:var(--ink-var);margin:0 0 16px}
+
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;
+    justify-content:center;z-index:100;padding:20px}
+  .modal.open{display:flex}
+  .modal-box{background:var(--lowest);border-radius:var(--r-lg);padding:22px 24px;max-width:420px;
+    border:1px solid var(--outline-sub)}
+  .modal-box h3{margin:0 0 9px;font-size:17px}
+  .modal-box p{margin:0 0 16px;font-size:13.5px;line-height:1.6;color:var(--ink-var)}
+</style>
+<style>
+  /* D-116: the one state the mock never drew. Neutral grey, same slot as a verdict,
+     visibly not an answer. */
+  .verdict.pending { background:#f1f3f5; color:#868e96; border-color:#dee2e6; font-weight:500; }
+  .summary.soft { color:#adb5bd; font-style:italic; }
+  .blockers { margin:6px 0 14px; padding-left:18px; font-size:13px; color:#495057; line-height:1.6; }
+  .banner { padding:10px 22px; background:#fff9db; border-bottom:1px solid #ffe8a1; font-size:13px; color:#664d03; }
+  /* The detail pane is closed until a job is chosen, and the list takes the full width
+     while it is. The mock rendered it permanently open with job 1 pre-selected, which
+     read as "this job is special" rather than "nothing is selected yet". */
+  .split.closed { grid-template-columns: 1fr; }
+  .split.closed .detailpane { display:none; }
+  .dp-bar { display:flex; justify-content:flex-end; margin:-6px -8px 8px 0; }
+  .dp-close { border:1px solid var(--outline-sub); background:transparent; border-radius:999px;
+    font-size:12px; padding:3px 12px; cursor:pointer; color:var(--ink-var); }
+  .dp-close:hover { background:var(--lower); }
+  .card.hidden, .co-head.hidden { display:none; }
+  .fcount { margin-left:auto; font-size:11.5px; color:var(--ink-var); align-self:center; }
+  .empty { padding:40px 20px; text-align:center; color:var(--ink-var); font-size:13px; }
+  /* D-143: a separate, full-width nav bar between the Jobs view and the Remote Companies
+     tracker — its own row, not a chip pulled from the filter bar's styling (that was the
+     bug Sakshi flagged: a page-switching control looked identical to an in-page filter). */
+  .mainnav { display:flex; gap:2px; padding:6px 22px; background:var(--low); border-bottom:1px solid var(--outline-sub); }
+  .navitem { display:flex; align-items:center; gap:7px; padding:9px 16px; border-radius:8px; border:none;
+    background:transparent; color:var(--ink-var); font-size:13.5px; font-family:inherit; cursor:pointer; }
+  .navitem.active { background:var(--primary-c); color:var(--on-primary-c); font-weight:600; }
+  .navicon { font-size:15px; }
+  .navcount { opacity:.65; font-weight:400; margin-left:2px; }
+  .navitem.active .navcount { opacity:.8; }
+  .view.hidden { display:none; }
+  .banner.pii { background:#fff0f0; border-bottom:1px solid #ffc9c9; color:#862e2e; }
+  .co-list { display:flex; flex-direction:column; gap:10px; padding:16px 22px; }
+  .co-row { border:1px solid var(--outline-sub); border-radius:10px; padding:12px 16px; }
+  .co-row.hidden { display:none; }
+  .co-row-top { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .co-name { font-weight:600; font-size:14.5px; }
+  .co-meta { font-size:12px; color:var(--ink-var); margin-top:2px; }
+  .co-evidence { font-size:13px; margin:6px 0 0; }
+  .co-contact { font-size:12.5px; margin-top:6px; display:flex; gap:8px; flex-wrap:wrap; color:var(--ink-var); }
+  .co-contact.soft { font-style:italic; color:#adb5bd; }
+  .co-tags { display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
+  .tag.hiring { background:var(--secondary-c); color:#004440; border-color:transparent; }
+  .co-salary { margin-top:6px; }
+</style>
+<div class="topbar">
+  <h1>job<span class="dot">·</span>scout</h1>
+  <span class="count">5 jobs · 4 companies</span>
+</div>
+<nav class="mainnav">
+  <button class="navitem active" data-tab="jobs"><span class="navicon" aria-hidden="true">💼</span>Jobs<span class="navcount">5</span></button>
+  <button class="navitem" data-tab="companies"><span class="navicon" aria-hidden="true">🏢</span>Remote companies<span class="navcount">29</span></button>
+</nav>
+<div class="view" id="view-jobs">
+  <div class="banner">
+    <strong>Live data</strong> — generated 2026-08-09 15:12 UTC from Supabase.
+    Yes 0 · Maybe 3 · Probably not 2 · <b>Pending 0</b>.
+    <b>0 are on-site</b> (<code>remote_type=other</code>) and hidden by default — nothing downstream currently acts on that field.
+  </div>
+  <div class="filterbar">
+    <div class="fgroup"><span class="flabel">Should I apply?</span>
+      <button class="fchip active" data-f="verdict" data-v="high">Yes</button>
+      <button class="fchip active" data-f="verdict" data-v="med">Maybe</button>
+      <button class="fchip active" data-f="verdict" data-v="low">Probably not</button>
+      <button class="fchip active" data-f="verdict" data-v="unknown">Pending</button></div>
+    <div class="fgroup"><span class="flabel">Location</span>
+      <button class="fchip active" data-f="remote" data-v="remote">Remote</button>
+      <button class="fchip active" data-f="remote" data-v="unknown">Not checked</button>
+      <button class="fchip" data-f="remote" data-v="onsite">On-site (0)</button></div>
+    <div class="fgroup"><span class="flabel">Experience</span>
+      <button class="fchip active" data-f="exp" data-v="fit">Right for me (4)</button>
+      <button class="fchip" data-f="exp" data-v="stretch">Stretch · 4–6 yrs (1)</button>
+      <button class="fchip" data-f="exp" data-v="senior">Too senior · 7+ (0)</button></div>
+    <div class="fgroup"><span class="flabel">AI focus</span>
+      <button class="fchip" data-f="ai" data-v="1">AI roles only</button></div>
+    <div class="fgroup"><span class="flabel">Technical</span>
+      <button class="fchip" data-f="tech" data-v="1">Hide deep-technical</button></div>
+    <div class="fgroup" style="border:none"><span class="flabel">IIT/IIM</span>
+      <button class="fchip" data-f="iit" data-v="1">Hide those</button></div>
+    <div class="fgroup" style="border:none;flex-wrap:wrap"><span class="flabel">Industry</span>
+      <button class="fchip active" data-f="domain" data-v="ai">ai</button><button class="fchip active" data-f="domain" data-v="edtech">edtech</button><button class="fchip active" data-f="domain" data-v="gaming">gaming</button><button class="fchip active" data-f="domain" data-v="healthtech">healthtech</button></div>
+    <span class="fcount" id="fcount"></span>
+  </div>
+  <div class="split closed" id="split">
+    <div class="pane listpane"><div class="co-head"><h2>Ethos</h2><span class="line"></span></div><button class="card" data-id="b673844f-b0e5-4d85-9644-b31a519ab88d" data-verdict="med" data-remote="remote" data-exp="stretch" data-ai="1" data-tech="0" data-domain="ai" data-iit="0">
+      <div class="card-top"><p class="job-title">Expert Opportunity - Associate Product Manager ($80/hr, up to $1,600/week)</p><span class="verdict maybe">Maybe</span></div>
+      <p class="summary">Create AI-generated presentations</p>
+      <div class="meta"><span>India</span><span class="sep">·</span><span>17d ago</span><span class="sep">·</span><span class="sal soft">salary unclear</span></div>
+      <div class="tags"><span class="tag ind">ai</span><span class="tag">Not very technical</span><span class="tag blk">4+ yrs</span></div>
+    </button><div class="co-head"><h2>Cloud Security Web</h2><span class="line"></span></div><button class="card" data-id="ccaafe97-f2a8-4d07-9be4-6ff5fc61a870" data-verdict="med" data-remote="remote" data-exp="fit" data-ai="1" data-tech="0" data-domain="healthtech" data-iit="0">
+      <div class="card-top"><p class="job-title">Associate Product Manager - Product Operations &amp; Adoption</p><span class="verdict maybe">Maybe</span></div>
+      <p class="summary">Drive product adoption and customer success</p>
+      <div class="meta"><span>India</span><span class="sep">·</span><span>9d ago</span><span class="sep">·</span><span class="sal soft">not stated</span></div>
+      <div class="tags"><span class="tag ind">healthtech</span><span class="tag">Not very technical</span></div>
+    </button><button class="card" data-id="0669ece5-d3eb-43c9-88db-3c79e39be319" data-verdict="med" data-remote="remote" data-exp="fit" data-ai="1" data-tech="1" data-domain="healthtech" data-iit="0">
+      <div class="card-top"><p class="job-title">Associate Product Manager - Clinical Product</p><span class="verdict maybe">Maybe</span></div>
+      <p class="summary">Own clinical product end to end</p>
+      <div class="meta"><span>India</span><span class="sep">·</span><span>9d ago</span><span class="sep">·</span><span class="sal soft">not stated</span></div>
+      <div class="tags"><span class="tag ind">healthtech</span><span class="tag">Technical</span></div>
+    </button><div class="co-head"><h2>Interview Kickstart</h2><span class="line"></span></div><button class="card" data-id="7abfb78e-a516-4d20-aa3f-535026091a8a" data-verdict="low" data-remote="remote" data-exp="fit" data-ai="1" data-tech="1" data-domain="edtech" data-iit="0">
+      <div class="card-top"><p class="job-title">Associate Product Manager</p><span class="verdict no">Probably not</span></div>
+      <p class="summary">Support product lifecycle</p>
+      <div class="meta"><span>Bengaluru, Karnataka, India</span><span class="sep">·</span><span>5d ago</span><span class="sep">·</span><span class="sal soft">not stated</span></div>
+      <div class="tags"><span class="tag ind">edtech</span><span class="tag">Technical</span><span class="tag blk">1+ yrs</span></div>
+    </button><div class="co-head"><h2>Hibiscustech</h2><span class="line"></span></div><button class="card" data-id="7aa69956-5d71-4366-baaa-228bbb9e6b5c" data-verdict="low" data-remote="remote" data-exp="fit" data-ai="1" data-tech="1" data-domain="gaming" data-iit="0">
+      <div class="card-top"><p class="job-title">Full Stack Product Intern</p><span class="verdict no">Probably not</span></div>
+      <p class="summary">Build product end to end</p>
+      <div class="meta"><span>India</span><span class="sep">·</span><span>2d ago</span><span class="sep">·</span><span class="sal soft">not stated</span></div>
+      <div class="tags"><span class="tag ind">gaming</span><span class="tag">Technical</span></div>
+    </button><p class="empty" id="empty" hidden>Nothing matches these filters.</p></div>
+    <div class="pane detailpane" id="dp"></div>
+  </div>
+</div>
+<div class="view hidden" id="view-companies">
+  <div class="banner pii">
+    <strong>Contains recruiter contact info</strong> (D-142) — this tab exists for outreach, so
+    unlike the Jobs tab this file should NOT be shared without redacting it first.
+  </div>
+  <div class="filterbar">
+    <div class="fgroup"><span class="flabel">Role level (optional — off shows every company)</span>
+      <button class="fchip" data-cf="senior" data-v="fit">Junior (3)</button>
+      <button class="fchip" data-cf="senior" data-v="stretch">Stretch (0)</button>
+      <button class="fchip" data-cf="senior" data-v="senior">Senior (26)</button></div>
+    <div class="fgroup"><span class="flabel">Hiring status</span>
+      <button class="fchip" data-cf="hiring" data-v="1">Currently hiring PM (29)</button>
+      <button class="fchip" data-cf="hiring" data-v="0">No current opening (0)</button></div>
+    <div class="fgroup" style="border:none;flex-wrap:wrap"><span class="flabel">Industry</span>
+      <button class="fchip" data-cf="domain" data-v="ai">ai</button><button class="fchip" data-cf="domain" data-v="edtech">edtech</button><button class="fchip" data-cf="domain" data-v="gaming">gaming</button><button class="fchip" data-cf="domain" data-v="healthtech">healthtech</button></div>
+    <span class="fcount" id="cofcount"></span>
+  </div>
+  <div class="co-list" id="colist"><div class="co-row" data-seniority="senior" data-hiring="1" data-domains="">
+      <div class="co-row-top">
+        <span class="co-name">CloudEagle.ai</span>
+        <div class="co-tags">
+          <span class="tag hiring">Hiring now</span>
+          
+          <span class="tag">Senior</span>
+        </div>
+      </div>
+      <div class="co-meta">First confirmed today · Last confirmed today</div>
+      <p class="co-evidence">Remote posting: Senior Product Manager — <a href="https://in.linkedin.com/jobs/view/senior-product-manager-at-cloudeagle-ai-4377658101" target="_blank" rel="noopener">view posting ↗</a></p>
+      
+      <div class="co-contact soft">No recruiter contact captured yet.</div>
+    </div><div class="co-row" data-seniority="senior" data-hiring="1" data-domains="">
+      <div class="co-row-top">
+        <span class="co-name">Tort Experts</span>
+        <div class="co-tags">
+          <span class="tag hiring">Hiring now</span>
+          
+          <span class="tag">Senior</span>
+        </div>
+      </div>
+      <div class="co-meta">First confirmed today · Last confirmed today</div>
+      <p class="co-evidence">Remote posting: Product Manager — <a href="https://in.linkedin.com/jobs/view/product-manager-at-tort-experts-4395271279" target="_blank" rel="noopener">view posting ↗</a></p>
+      
+      <div class="co-contact soft">No recruiter contact captured yet.</div>
+    </div><div class="co-row" data-seniority="senior" data-hiring="1" data-domains="">
+      <div class="co-row-top">
+        <span class="co-name">Kayzen</span>
+        <div class="co-tags">
+          <span class="tag hiring">Hiring now</span>
+          
+          <span class="tag">Senior</span>
+        </div>
+      </div>
+      <div class="co-meta">First confirmed today · Last confirmed today</div>
+      <p class="co-evidence">Remote posting: Product Analyst (m/f/d) — <a href="https://in.linkedin.com/jobs/view/product-analyst-m-f-d-at-kayzen-4409006284" target="_blank" rel="noopener">view posting ↗</a></p>
+      
+      <div class="co-contact soft">No recruiter contact captured yet.</div>
+    </div><div class="co-row" data-seniority="senior" data-hiring="1" data-domains="">
+      <div class="co-row-top">
+        <span class="co-name">AIOS</span>
+        <div class="co-tags">
+          <span class="tag hiring">Hiring now</span>
+          
+          <span class="tag">Senior</span>
+        </div>
+      </div>
+      <div class="co-meta">First confirmed today · Last confirmed today</div>
+      <p class="co-evidence">Remote posting: Head of Product Growth (Referrals &amp; Viral Loops) at AIOS — Remote, $200k-$400k/yr + 0.15%-0.50% — <a href="https://in.linkedin.com/jobs/view/head-of-product-growth-referrals-viral-loops-at-aios-%E2%80%94-remote-%24200k-%24400k-yr-%2B-0-15%25-0-50%25-at-aios-4415559213" target="_blank" rel="noopener">view posting ↗</a></p>
+      
+      <div class="co-contact soft">No recruiter contact captured yet.</div>
+    </div><div class="co-row" data-seniority="senior" data-hiring="1" data-domains="">
+      <div class="co-row-top">
+        <span class="co-name">G-P</span>
+        <div class="co-tags">
+          <span class="tag hiring">Hiring now</span>
+          
+          <span class="tag">Senior</span>
+        </div>
+      </div>
+      <div class="co-meta">First confirmed today · Last confirmed today</div>
+      <p class="co-evidence">Remote posting: Principal Product Manager – Agentic AI Platform — <a href="https://in.linkedin.com/jobs/view/principal-product-manager-%E2%80%93-agentic-ai-platform-at-g-p-4418398667" target="_blank" rel="noopener">view posting ↗</a></p>
+      
+      <div class="co-contact soft">No recruiter contact captured yet.</div>
+    </div><div class="co-row" data-seniority="senior" data-hiring="1" data-domains="">
+      <div class="co-row-top">
+        <span class="co-name">Eltropy</span>
+        <div class="co-tags">
+          <span class="tag hiring">Hiring now</span>
+          
+          <span class="tag">Senior</span>
+        </div>
+      </div>
+      <div class="co-meta">First confirmed today · Last confirmed today</div>
+      <p class="co-evidence">Remote posting: Senior Product Manager (Integrations) — <a href="https://in.linkedin.com/jobs/view/senior-product-manager-integrations-at-eltropy-4424001120" target="_blank" rel="noopener">view posting ↗</a></p>
+      
+      <div class="co-contact soft">No recruiter contact captured yet.</div>
+    </div><div class="co-row" data-seniority="senior" data-hiring="1" data-domains="">
+      <div class="co-row-top">
+        <span class="co-name">HighLevel</span>
+        <div class="co-tags">
+          <span class="tag hiring">Hiring now</span>
+          
+          <span class="tag">Senior</span>
+        </div>
+      </div>
+      <div class="co-meta">First confirmed today · Last confirmed today</div>
+      <p class="co-evidence">Remote posting: Sr. Product Manager - Phone Platform — <a href="https://in.linkedin.com/jobs/view/sr-product-manager-phone-platform-at-highlevel-4420714142" target="_blank" rel="noopener">view posting ↗</a></p>
+      
+      <div class="co-contact"><span>Manish P</span><span class="sep">·</span><a href="https://in.linkedin.com/in/manish-p-14ab0077" target="_blank" rel="noopener">LinkedIn ↗</a></div>
+    </div><div class="co-row" data-seniority="senior" data-hiring="1" data-domains="">
+      <div class="co-row-top">
+        <span class="co-name">SigNoz</span>
+        <div class="co-tags">
+          <span class="tag hiring">Hiring now</span>
+          
+          <span class="tag">Senior</span>
+        </div>
+      </div>
+      <div class="co-meta">First confirmed today · Last confirmed today</div>
+      <p class="co-evidence">Remote posting: Sr Product Manager - IC — <a href="https://in.linkedin.com/jobs/view/sr-product-manager-ic-at-signoz-4431391331" target="_blank" rel="noopener">view posting ↗</a></p>
+      
+      <div class="co-contact soft">No recruiter contact captured yet.</div>
+    </div><div class="co-row" data-seniority="senior" data-hiring="1" data-domains="">
+      <div class="co-row-top">
+        <span class="co-name">MonetizeMore</span>
+        <div class="co-tags">
+          <span class="tag hiring">Hiring now</span>
+          
+          <span class="tag">Senior</span>
+        </div>
+      </div>
+      <div class="co-meta">First confirmed today · Last confirmed today</div>
+      <p class="co-evidence">Remote posting: Group Product Manager (Remote) — <a href="https://in.linkedin.com/jobs/view/group-product-manager-remote-at-monetizemore-4434753517" target="_blank" rel="noopener">view posting ↗</a></p>
+      
+      <div class="co-contact soft">No recruiter contact captured yet.</div>
+    </div><div class="co-row" data-seniority="senior" data-hiring="1" data-domains="">
+      <div class="co-row-top">
+        <span class="co-name">Hyperproof</span>
+        <div class="co-tags">
+          <span class="tag hiring">Hiring now</span>
+          
+          <span class="tag">Senior</span>
+        </div>
+      </div>
+      <div class="co-meta">First confirmed today · Last confirmed today</div>
+      <p class="co-evidence">Remote posting: Product Manager, Risk Management — <a href="https://in.linkedin.com/jobs/view/product-manager-risk-management-at-hyperproof-4437473049" target="_blank" rel="noopener">view posting ↗</a></p>
+      
+      <div class="co-contact soft">No recruiter contact captured yet.</div>
+    </div><div class="co-row" data-seniority="senior" data-hiring="1" data-domains="ai">
+      <div class="co-row-top">
+        <span class="co-name">Ethos</span>
+        <div class="co-tags">
+          <span class="tag hiring">Hiring now</span>
+          <span class="tag">ai</span>
+          <span class="tag">Senior</span>
+        </div>
+      </div>
+      <div class="co-meta">First confirmed today · Last confirmed today</div>
+      <p class="co-evidence">Remote posting: Expert Opportunity - Product Manager (Tech) — <a href="https://in.linkedin.com/jobs/view/expert-opportunity-product-manager-tech-at-ethos-4439593975" target="_blank" rel="noopener">view posting ↗</a></p>
+      
+      <div class="co-contact soft">No recruiter contact captured yet.</div>
+    </div><div class="co-row" data-seniority="senior" data-hiring="1" data-domains="">
+      <div class="co-row-top">
+        <span class="co-name">Robusta Studio</span>
+        <div class="co-tags">
+          <span class="tag hiring">Hiring now</span>
+          
+          <span class="tag">Senior</span>
+        </div>
+      </div>
+      <div class="co-meta">First confirmed today · Last confirmed today</div>
+      <p class="co-evidence">Remote posting: Product Owner / Service Designer (Mid level) - 4.5 Months - Remote - Octopus — <a href="https://in.linkedin.com/jobs/view/product-owner-service-designer-mid-level-4-5-months-remote-octopus-at-robusta-studio-4439720749" target="_blank" rel="noopener">view posting ↗</a></p>
+      
+      <div class="co-contact soft">No recruiter contact captured yet.</div>
+    </div><div class="co-row" data-seniority="senior" data-hiring="1" data-domains="">
+      <div class="co-row-top">
+        <span class="co-name">Porch Group</span>
+        <div class="co-tags">
+          <span class="tag hiring">Hiring now</span>
+          
+          <span class="tag">Senior</span>
+        </div>
+      </div>
+      <div class="co-meta">First confirmed today · Last confirmed today</div>
+      <p class="co-evidence">Remote posting: Senior Product Manager, Warranty — <a href="https://in.linkedin.com/jobs/view/senior-product-manager-warranty-at-porch-group-4437257715" target="_blank" rel="noopener">view posting ↗</a></p>
+      
+      <div class="co-contact soft">No recruiter contact captured yet.</div>
+    </div><div class="co-row" data-seniority="senior" data-hiring="1" data-domains="">
+      <div class="co-row-top">
+        <span class="co-name">CAREER141</span>
+        <div class="co-tags">
+          <span class="tag hiring">Hiring now</span>
+          
+          <span class="tag">Senior</span>
+        </div>
+      </div>
+      <div class="co-meta">First confirmed today · Last confirmed today</div>
+      <p class="co-evidence">Remote posting: Product Manager — <a href="https://in.linkedin.com/jobs/view/product-manager-at-career141-4440915004" target="_blank" rel="noopener">view posting ↗</a></p>
+      
+      <div class="co-contact"><span>Azeemusham Ansarideen</span><span class="sep">·</span><a href="https://lk.linkedin.com/in/azeemusham-ansarideen-342ba218a" target="_blank" rel="noopener">LinkedIn ↗</a></div>
+    </div><div class="co-row" data-seniority="senior" data-hiring="1" data-domains="">
+      <div class="co-row-top">
+        <span class="co-name">NavGurukul</span>
+        <div class="co-tags">
+          <span class="tag hiring">Hiring now</span>
+          
+          <span class="tag">Senior</span>
+        </div>
+      </div>
+      <div class="co-meta">First confirmed today · Last confirmed today</div>
+      <p class="co-evidence">Remote posting: SENIOR PRODUCT MANAGER — AI LEARNING &amp; GAMES — <a href="https://in.linkedin.com/jobs/view/senior-product-manager-%E2%80%94-ai-learning-games-at-navgurukul-4441627982" target="_blank" rel="noopener">view posting ↗</a></p>
+      
+      <div class="co-contact soft">No recruiter contact captured yet.</div>
+    </div><div class="co-row" data-seniority="senior" data-hiring="1" data-domains="">
+      <div class="co-row-top">
+        <span class="co-name">Granicus India</span>
+        <div class="co-tags">
+          <span class="tag hiring">Hiring now</span>
+          
+          <span class="tag">Senior</span>
+        </div>
+      </div>
+      <div class="co-meta">First confirmed today · Last confirmed today</div>
+      <p class="co-evidence">Remote posting: Technical Product Owner 2 — <a href="https://in.linkedin.com/jobs/view/technical-product-owner-2-at-granicus-india-4441934786" target="_blank" rel="noopener">view posting ↗</a></p>
+      
+      <div class="co-contact soft">No recruiter contact captured yet.</div>
+    </div><div class="co-row" data-seniority="senior" data-hiring="1" data-domains="">
+      <div class="co-row-top">
+        <span class="co-name">Collabrix Inc.</span>
+        <div class="co-tags">
+          <span class="tag hiring">Hiring now</span>
+          
+          <span class="tag">Senior</span>
+        </div>
+      </div>
+      <div class="co-meta">First confirmed today · Last confirmed today</div>
+      <p class="co-evidence">Remote posting: Product Analyst — <a href="https://in.linkedin.com/jobs/view/product-analyst-at-collabrix-inc-4447478074" target="_blank" rel="noopener">view posting ↗</a></p>
+      
+      <div class="co-contact soft">No recruiter contact captured yet.</div>
+    </div><div class="co-row" data-seniority="senior" data-hiring="1" data-domains="">
+      <div class="co-row-top">
+        <span class="co-name">GiftsBazaar.in</span>
+        <div class="co-tags">
+          <span class="tag hiring">Hiring now</span>
+          
+          <span class="tag">Senior</span>
+        </div>
+      </div>
+      <div class="co-meta">First confirmed today · Last confirmed today</div>
+      <p class="co-evidence">Remote posting: Product Manager (Remote) — <a href="https://in.linkedin.com/jobs/view/product-manager-remote-at-giftsbazaar-in-4447653301" target="_blank" rel="noopener">view posting ↗</a></p>
+      
+      <div class="co-contact soft">No recruiter contact captured yet.</div>
+    </div><div class="co-row" data-seniority="senior" data-hiring="1" data-domains="">
+      <div class="co-row-top">
+        <span class="co-name">Nityo Infotech</span>
+        <div class="co-tags">
+          <span class="tag hiring">Hiring now</span>
+          
+          <span class="tag">Senior</span>
+        </div>
+      </div>
+      <div class="co-meta">First confirmed today · Last confirmed today</div>
+      <p class="co-evidence">Remote posting: Integration Product Manager(Workday) — <a href="https://in.linkedin.com/jobs/view/integration-product-manager-workday-at-nityo-infotech-4448223711" target="_blank" rel="noopener">view posting ↗</a></p>
+      
+      <div class="co-contact"><span>Mohammed Shuja</span><span class="sep">·</span><a href="https://in.linkedin.com/in/mohammed-shuja-aa387a82" target="_blank" rel="noopener">LinkedIn ↗</a></div>
+    </div><div class="co-row" data-seniority="senior" data-hiring="1" data-domains="">
+      <div class="co-row-top">
+        <span class="co-name">Uplers</span>
+        <div class="co-tags">
+          <span class="tag hiring">Hiring now</span>
+          
+          <span class="tag">Senior</span>
+        </div>
+      </div>
+      <div class="co-meta">First confirmed today · Last confirmed today</div>
+      <p class="co-evidence">Remote posting: Product Manager (Craftsperson) — <a href="https://in.linkedin.com/jobs/view/product-manager-craftsperson-at-uplers-4449030349" target="_blank" rel="noopener">view posting ↗</a></p>
+      
+      <div class="co-contact soft">No recruiter contact captured yet.</div>
+    </div><div class="co-row" data-seniority="senior" data-hiring="1" data-domains="">
+      <div class="co-row-top">
+        <span class="co-name">Jobgether</span>
+        <div class="co-tags">
+          <span class="tag hiring">Hiring now</span>
+          
+          <span class="tag">Senior</span>
+        </div>
+      </div>
+      <div class="co-meta">First confirmed today · Last confirmed today</div>
+      <p class="co-evidence">Remote posting: Sr. Product Manager - Lead Generation Suite — <a href="https://in.linkedin.com/jobs/view/sr-product-manager-lead-generation-suite-at-jobgether-4447343732" target="_blank" rel="noopener">view posting ↗</a></p>
+      
+      <div class="co-contact soft">No recruiter contact captured yet.</div>
+    </div><div class="co-row" data-seniority="senior" data-hiring="1" data-domains="">
+      <div class="co-row-top">
+        <span class="co-name">RONIN Studies</span>
+        <div class="co-tags">
+          <span class="tag hiring">Hiring now</span>
+          
+          <span class="tag">Senior</span>
+        </div>
+      </div>
+      <div class="co-meta">First confirmed today · Last confirmed today</div>
+      <p class="co-evidence">Remote posting: Senior Product Manager (Paid Consultancy Opportunity) — <a href="https://in.linkedin.com/jobs/view/senior-product-manager-paid-consultancy-opportunity-at-ronin-studies-4449477038" target="_blank" rel="noopener">view posting ↗</a></p>
+      
+      <div class="co-contact soft">No recruiter contact captured yet.</div>
+    </div><div class="co-row" data-seniority="senior" data-hiring="1" data-domains="">
+      <div class="co-row-top">
+        <span class="co-name">Seattle New Media</span>
+        <div class="co-tags">
+          <span class="tag hiring">Hiring now</span>
+          
+          <span class="tag">Senior</span>
+        </div>
+      </div>
+      <div class="co-meta">First confirmed today · Last confirmed today</div>
+      <p class="co-evidence">Remote posting: Business Analyst / Product Manager — <a href="https://in.linkedin.com/jobs/view/business-analyst-product-manager-at-seattle-new-media-4449367931" target="_blank" rel="noopener">view posting ↗</a></p>
+      
+      <div class="co-contact soft">No recruiter contact captured yet.</div>
+    </div><div class="co-row" data-seniority="senior" data-hiring="1" data-domains="">
+      <div class="co-row-top">
+        <span class="co-name">BuzzBoard</span>
+        <div class="co-tags">
+          <span class="tag hiring">Hiring now</span>
+          
+          <span class="tag">Senior</span>
+        </div>
+      </div>
+      <div class="co-meta">First confirmed today · Last confirmed today</div>
+      <p class="co-evidence">Remote posting: Product Manager — AI Products — <a href="https://in.linkedin.com/jobs/view/product-manager-%E2%80%94-ai-products-at-buzzboard-4450254853" target="_blank" rel="noopener">view posting ↗</a></p>
+      
+      <div class="co-contact soft">No recruiter contact captured yet.</div>
+    </div><div class="co-row" data-seniority="senior" data-hiring="1" data-domains="">
+      <div class="co-row-top">
+        <span class="co-name">CareCar</span>
+        <div class="co-tags">
+          <span class="tag hiring">Hiring now</span>
+          
+          <span class="tag">Senior</span>
+        </div>
+      </div>
+      <div class="co-meta">First confirmed today · Last confirmed today</div>
+      <p class="co-evidence">Remote posting: Software Product Manager - Remote — <a href="https://in.linkedin.com/jobs/view/software-product-manager-remote-at-carecar-4450781174" target="_blank" rel="noopener">view posting ↗</a></p>
+      
+      <div class="co-contact soft">No recruiter contact captured yet.</div>
+    </div><div class="co-row" data-seniority="senior" data-hiring="1" data-domains="">
+      <div class="co-row-top">
+        <span class="co-name">Embrace Software Inc</span>
+        <div class="co-tags">
+          <span class="tag hiring">Hiring now</span>
+          
+          <span class="tag">Senior</span>
+        </div>
+      </div>
+      <div class="co-meta">First confirmed today · Last confirmed today</div>
+      <p class="co-evidence">Remote posting: Product Manager — <a href="https://in.linkedin.com/jobs/view/product-manager-at-embrace-software-inc-4451315987" target="_blank" rel="noopener">view posting ↗</a></p>
+      
+      <div class="co-contact"><span>Saranya M</span><span class="sep">·</span><a href="https://www.linkedin.com/in/saranya-m08" target="_blank" rel="noopener">LinkedIn ↗</a></div>
+    </div><div class="co-row" data-seniority="fit" data-hiring="1" data-domains="healthtech">
+      <div class="co-row-top">
+        <span class="co-name">Cloud Security Web</span>
+        <div class="co-tags">
+          <span class="tag hiring">Hiring now</span>
+          <span class="tag">healthtech</span>
+          <span class="tag">Junior</span>
+        </div>
+      </div>
+      <div class="co-meta">First confirmed today · Last confirmed today</div>
+      <p class="co-evidence">Remote posting: Associate Product Manager - Product Operations &amp; Adoption — <a href="https://in.linkedin.com/jobs/view/associate-product-manager-product-operations-adoption-at-cloud-security-web-4446972795" target="_blank" rel="noopener">view posting ↗</a></p>
+      
+      <div class="co-contact soft">No recruiter contact captured yet.</div>
+    </div><div class="co-row" data-seniority="fit" data-hiring="1" data-domains="edtech">
+      <div class="co-row-top">
+        <span class="co-name">Interview Kickstart</span>
+        <div class="co-tags">
+          <span class="tag hiring">Hiring now</span>
+          <span class="tag">edtech</span>
+          <span class="tag">Junior</span>
+        </div>
+      </div>
+      <div class="co-meta">First confirmed today · Last confirmed today</div>
+      <p class="co-evidence">Remote posting: Associate Product Manager — <a href="https://in.linkedin.com/jobs/view/associate-product-manager-at-interview-kickstart-4448278783" target="_blank" rel="noopener">view posting ↗</a></p>
+      
+      <div class="co-contact"><span>Pooja Venkatesh</span><span class="sep">·</span><a href="https://in.linkedin.com/in/pooja-venkatesh-14786717a" target="_blank" rel="noopener">LinkedIn ↗</a></div>
+    </div><div class="co-row" data-seniority="fit" data-hiring="1" data-domains="gaming">
+      <div class="co-row-top">
+        <span class="co-name">Hibiscustech</span>
+        <div class="co-tags">
+          <span class="tag hiring">Hiring now</span>
+          <span class="tag">gaming</span>
+          <span class="tag">Junior</span>
+        </div>
+      </div>
+      <div class="co-meta">First confirmed today · Last confirmed today</div>
+      <p class="co-evidence">Remote posting: Full Stack Product Intern — <a href="https://in.linkedin.com/jobs/view/full-stack-product-intern-at-hibiscustech-4448728190" target="_blank" rel="noopener">view posting ↗</a></p>
+      
+      <div class="co-contact soft">No recruiter contact captured yet.</div>
+    </div></div>
+</div>
+<div class="modal" id="modal">
+  <div class="modal-box"><h3 id="mt">Not built yet</h3><p id="mb"></p><button class="btn primary" id="mc">Got it</button></div>
+</div>
+<script>
+const DETAIL = {"b673844f-b0e5-4d85-9644-b31a519ab88d":"<div class=\"id-row\">\n      <div class=\"logo\">ET</div>\n      <div><div class=\"co\">Ethos</div><div class=\"src\">via linkedin</div></div>\n    </div>\n    <h2>Expert Opportunity - Associate Product Manager ($80/hr, up to $1,600/week)</h2>\n    <p class=\"subline\">India · 17d ago</p>\n\n    <div class=\"tier1\">\n      <div class=\"t1-top\"><span class=\"t1-q\">Should I apply?</span><span class=\"verdict lg maybe\">Maybe</span></div>\n      <p class=\"t1-why\">Matched on: AI PM</p>\n    </div>\n\n    <div class=\"tier3\">\n      <div class=\"actions\">\n        <a class=\"btn primary\" href=\"https://in.linkedin.com/jobs/view/expert-opportunity-associate-product-manager-%2480-hr-up-to-%241-600-week-at-ethos-4442712044\" target=\"_blank\" rel=\"noopener\">Open posting ↗</a><span class=\"chip soft\">link live</span>\n        <button class=\"btn\" data-explain=\"shortlist\">☆ Shortlist</button>\n        <button class=\"btn\" data-explain=\"tailor\">Tailor résumé</button>\n      </div>\n    </div>\n\n    <div class=\"tier2\">\n      <p class=\"t2-summary\">Create AI-generated presentations</p>\n      <div class=\"chips\">\n        <span class=\"chip ind\">ai</span>\n        <span class=\"chip\">remote india</span>\n        <span class=\"chip mono\">salary unclear</span>\n      </div>\n      <p class=\"skills-head\">Watch out for</p><ul class=\"blockers\"><li><b>4+ years asked</b> — you are transitioning in, so this may be a stretch</li></ul>\n      <p class=\"skills-head\">Skills asked for</p><div class=\"skills\"><span class=\"sk gap\">powerpoint</span><span class=\"sk gap\">written communication</span><span class=\"sk gap\">attention to detail</span></div>\n    </div>\n\n    <div class=\"tier4\">\n      <h3 class=\"sec\">Full job description</h3>\n      <div class=\"jd\"><p>About This Opportunity</p><p>We're working with a leading foundational AI lab to find experienced associate product managers at top technology companies who can help train their latest language model on professional presentation and slide deck tasks.</p><p>We're looking for APMs with 4+ years shipping products and presenting strategy, roadmaps, and reviews to create, evaluate, and refine AI-generated presentations and slide decks across core workflows: product strategy decks, roadmap presentations, product review documents, launch readiness decks, executive check-ins, and OKR review materials.</p><p>Compensation: $80/hour</p><p>Commitment: Flexible, 5-20 hours per week (or more if desired)</p><p>Location: Fully remote, work on your own schedule</p><p>Start date: ASAP</p><p>Qualifications</p><p>4+ years as a product manager at a top technology company\nTrack record of presenting product strategy to executives and cross-functional teams\nExpert-level PowerPoint and slide craftsmanship, with excellent written communication and attention to detail</p><p>About Ethos</p><p>Ethos is a new expert network built by a McKinsey/SoftBank/DeepMind team and backed by world-leading investors like General Catalyst. We connect experts with investors and consultancies for paid expert calls, speaking engagements, and advisory opportunities.</p><p>Key Requirements</p><p>4+ years as a product manager at a top technology company\nTrack record of presenting product strategy to executives and cross-functional teams\nExpert-level PowerPoint and slide craftsmanship, with excellent written communication and attention to detail</p></div>\n    </div>","ccaafe97-f2a8-4d07-9be4-6ff5fc61a870":"<div class=\"id-row\">\n      <div class=\"logo\">CL</div>\n      <div><div class=\"co\">Cloud Security Web</div><div class=\"src\">via linkedin</div></div>\n    </div>\n    <h2>Associate Product Manager - Product Operations &amp; Adoption</h2>\n    <p class=\"subline\">India · 9d ago</p>\n\n    <div class=\"tier1\">\n      <div class=\"t1-top\"><span class=\"t1-q\">Should I apply?</span><span class=\"verdict lg maybe\">Maybe</span></div>\n      <p class=\"t1-why\">Matched on: AI PM</p>\n    </div>\n\n    <div class=\"tier3\">\n      <div class=\"actions\">\n        <a class=\"btn primary\" href=\"https://in.linkedin.com/jobs/view/associate-product-manager-product-operations-adoption-at-cloud-security-web-4446972795\" target=\"_blank\" rel=\"noopener\">Open posting ↗</a><span class=\"chip soft\">link live</span>\n        <button class=\"btn\" data-explain=\"shortlist\">☆ Shortlist</button>\n        <button class=\"btn\" data-explain=\"tailor\">Tailor résumé</button>\n      </div>\n    </div>\n\n    <div class=\"tier2\">\n      <p class=\"t2-summary\">Drive product adoption and customer success</p>\n      <div class=\"chips\">\n        <span class=\"chip ind\">healthtech</span>\n        <span class=\"chip\">remote india</span>\n        <span class=\"chip mono\">not stated</span>\n      </div>\n      \n      <p class=\"skills-head\">Skills asked for</p><div class=\"skills\"><span class=\"sk \">sql</span><span class=\"sk \">saas onboarding</span><span class=\"sk \">dashboard creation</span><span class=\"sk \">healthcare operations</span><span class=\"sk gap\">customer onboarding</span><span class=\"sk gap\">product usage analysis</span><span class=\"sk gap\">qa</span><span class=\"sk gap\">feedback collection</span><span class=\"sk gap\">issue prioritization</span><span class=\"sk gap\">stakeholder management</span></div>\n    </div>\n\n    <div class=\"tier4\">\n      <h3 class=\"sec\">Full job description</h3>\n      <div class=\"jd\"><p>EchoPad.ai is building AI-powered healthcare products that automate clinical documentation, patient communication, and operational workflows.\nLocation: Remote (India)\nRole: Associate Product Manager - Product Operations &amp; Adoption\nWe are looking for someone very strong in:\nCustomer onboarding and pilot management\nProduct usage analysis and reporting\nQA, feedback collection, and issue prioritization\nCoordinating across customers, product, and engineering\nDriving product adoption and customer success\nWe are looking for strong executors who can demonstrate relevant projects, campaigns, or measurable results. Candidates must be able to contribute from day one and work with high ownership.\nPreferred: SQL, SaaS onboarding, dashboard creation, and healthcare operations.\nCompany: https://echopad.ai</p></div>\n    </div>","0669ece5-d3eb-43c9-88db-3c79e39be319":"<div class=\"id-row\">\n      <div class=\"logo\">CL</div>\n      <div><div class=\"co\">Cloud Security Web</div><div class=\"src\">via linkedin</div></div>\n    </div>\n    <h2>Associate Product Manager - Clinical Product</h2>\n    <p class=\"subline\">India · 9d ago</p>\n\n    <div class=\"tier1\">\n      <div class=\"t1-top\"><span class=\"t1-q\">Should I apply?</span><span class=\"verdict lg maybe\">Maybe</span></div>\n      <p class=\"t1-why\">Matched on: AI PM</p>\n    </div>\n\n    <div class=\"tier3\">\n      <div class=\"actions\">\n        <a class=\"btn primary\" href=\"https://in.linkedin.com/jobs/view/associate-product-manager-clinical-product-at-cloud-security-web-4446980131\" target=\"_blank\" rel=\"noopener\">Open posting ↗</a><span class=\"chip soft\">link live</span>\n        <button class=\"btn\" data-explain=\"shortlist\">☆ Shortlist</button>\n        <button class=\"btn\" data-explain=\"tailor\">Tailor résumé</button>\n      </div>\n    </div>\n\n    <div class=\"tier2\">\n      <p class=\"t2-summary\">Own clinical product end to end</p>\n      <div class=\"chips\">\n        <span class=\"chip ind\">healthtech</span>\n        <span class=\"chip\">remote india</span>\n        <span class=\"chip mono\">not stated</span>\n      </div>\n      \n      <p class=\"skills-head\">Skills asked for</p><div class=\"skills\"><span class=\"sk gap\">customer discovery</span><span class=\"sk gap\">product requirements</span><span class=\"sk gap\">user stories</span><span class=\"sk gap\">prioritization</span></div>\n    </div>\n\n    <div class=\"tier4\">\n      <h3 class=\"sec\">Full job description</h3>\n      <div class=\"jd\"><p>EchoPad.ai is building AI-powered healthcare products that automate clinical documentation, patient communication, and operational workflows.\nLocation: Remote (India)\nRole: Associate Product Manager - Clinical Product\nWe are looking for someone very strong in:\nCustomer discovery and healthcare workflow analysis\nProduct requirements, user stories, and prioritization\nWorking closely with engineering and design\nConverting customer feedback into product improvements\nTaking ownership and executing in a fast-moving startup\nWe are looking for strong executors who can demonstrate relevant projects, campaigns, or measurable results. Candidates must be able to contribute from day one and work with high ownership.\nCompany: https://echopad.ai</p></div>\n    </div>","7abfb78e-a516-4d20-aa3f-535026091a8a":"<div class=\"id-row\">\n      <div class=\"logo\">IN</div>\n      <div><div class=\"co\">Interview Kickstart</div><div class=\"src\">via linkedin</div></div>\n    </div>\n    <h2>Associate Product Manager</h2>\n    <p class=\"subline\">Bengaluru, Karnataka, India · 5d ago</p>\n\n    <div class=\"tier1\">\n      <div class=\"t1-top\"><span class=\"t1-q\">Should I apply?</span><span class=\"verdict lg no\">Probably not</span></div>\n      <p class=\"t1-why\">Matched on: AI PM · Deep technical (L4)</p>\n    </div>\n\n    <div class=\"tier3\">\n      <div class=\"actions\">\n        <a class=\"btn primary\" href=\"https://in.linkedin.com/jobs/view/associate-product-manager-at-interview-kickstart-4448278783\" target=\"_blank\" rel=\"noopener\">Open posting ↗</a><span class=\"chip soft\">link live</span>\n        <button class=\"btn\" data-explain=\"shortlist\">☆ Shortlist</button>\n        <button class=\"btn\" data-explain=\"tailor\">Tailor résumé</button>\n      </div>\n    </div>\n\n    <div class=\"tier2\">\n      <p class=\"t2-summary\">Support product lifecycle</p>\n      <div class=\"chips\">\n        <span class=\"chip ind\">edtech</span>\n        <span class=\"chip\">remote india</span>\n        <span class=\"chip mono\">not stated</span>\n      </div>\n      <p class=\"skills-head\">Watch out for</p><ul class=\"blockers\"><li><b>Deeply technical (L4)</b> — expects hands-on code/SQL/ML depth</li><li><b>1–3 years asked</b> — you are transitioning in, so this may be a stretch</li></ul>\n      <p class=\"skills-head\">Skills asked for</p><div class=\"skills\"><span class=\"sk gap\">ai</span><span class=\"sk gap\">data analysis</span><span class=\"sk gap\">agile</span><span class=\"sk gap\">communication</span><span class=\"sk gap\">collaboration</span><span class=\"sk gap\">problem solving</span><span class=\"sk gap\">data driven approach</span></div>\n    </div>\n\n    <div class=\"tier4\">\n      <h3 class=\"sec\">Full job description</h3>\n      <div class=\"jd\"><p>Let's start with who we are:\nInterviews can be hard. And when it comes to the top tech companies like Google, Facebook, Netflix, etc., they can be downright brutal. Most candidates don’t make it simply because they don’t prepare well enough. IK helps candidates nail the toughest tech interviews. At IK, current and former hiring managers at these top companies take candidates through an intense prep course to prepare them to crack the toughest Technical interviews. You could think of us as ‘the everything store’ for career transitions and interview skill development.</p><p>How do we do that, you ask?\nWe have a structured way of helping folks crack interviews-\nCareer accelerator course\nEnd-to-end courses + platform\nMore than 750+ instructors from Google, FB, Amazon, Netflix, Dropbox, and other top Silicon Valley companies.\nAnd, to date, we have trained over 27000+ engineers!\nWhat’s more exciting is that we are completely remote and hiring the best people we can find regardless of geo.</p><p>Sounds interesting? Then here’s some more information about the role</p><p>Position Overview\nWe’re looking for an Associate Product Manager (APM) to join our Product Management team at IK. In this role, you’ll support the discovery, development, and improvement of products that help users succeed in their career journeys. You’ll work closely with engineering, design, and other cross-functional teams to define problems, shape solutions, and deliver meaningful user experiences.\nThis role is ideal for someone early in their product career who is curious, structured in their thinking, and excited to learn how great products are built</p><p>Responsibilities:\nSupport the end-to-end product lifecycle—from problem discovery to delivery and iteration\nWork with engineers and designers to define requirements, clarify scope, and prioritize work\nGather and synthesize user feedback, product data, and internal inputs to inform decisions\nHelp define product goals, success metrics, and release plans\nAssist with competitive research and market understanding to improve product direction\nParticipate in agile ceremonies such as sprint planning, stand-ups, and retrospectives\nAdvocate for user needs while balancing business and technical constraints</p><p>What would Excite us :\nBachelor’s or Master’s degree in Business, Marketing, Computer Science, or a related field.\n1-3 years of experience in product management, business analysis, or a growth-focused role in a tech environment.\nHands-on AI experience is mandatory. Candidates should have built AI-powered applications or workflows using tools like Claude, Supabase, Vercel, Lovable (or similar), be data-driven, and be able to demonstrate their contributions; experience with AI Voice Bots or AI Support Agents is a strong plus.\nStrong analytical and problem-solving skills with a data-driven approach.\nExcellent communication and collaboration skills for effective cross-functional teamwork.\nA deep interest in technology, product development, and market trends.\nAgile and adaptable, with the ability to thrive in a fast-paced and evolving tech landscape.</p><p>What would excite you?\nJoin a forward-thinking company where innovation and growth are paramount.\nCollaborate with a world-class team on impactful projects.\nPlay a key role in the direction and success of diverse tech products.\nEnjoy a competitive compensation package in a supportive and dynamic work environment\nComplete ownership; there is minimal management and extreme autonomy</p></div>\n    </div>","7aa69956-5d71-4366-baaa-228bbb9e6b5c":"<div class=\"id-row\">\n      <div class=\"logo\">HI</div>\n      <div><div class=\"co\">Hibiscustech</div><div class=\"src\">via linkedin</div></div>\n    </div>\n    <h2>Full Stack Product Intern</h2>\n    <p class=\"subline\">India · 2d ago</p>\n\n    <div class=\"tier1\">\n      <div class=\"t1-top\"><span class=\"t1-q\">Should I apply?</span><span class=\"verdict lg no\">Probably not</span></div>\n      <p class=\"t1-why\">Matched on: AI PM · Deep technical (L4)</p>\n    </div>\n\n    <div class=\"tier3\">\n      <div class=\"actions\">\n        <a class=\"btn primary\" href=\"https://in.linkedin.com/jobs/view/full-stack-product-intern-at-hibiscustech-4448728190\" target=\"_blank\" rel=\"noopener\">Open posting ↗</a><span class=\"chip soft\">link live</span>\n        <button class=\"btn\" data-explain=\"shortlist\">☆ Shortlist</button>\n        <button class=\"btn\" data-explain=\"tailor\">Tailor résumé</button>\n      </div>\n    </div>\n\n    <div class=\"tier2\">\n      <p class=\"t2-summary\">Build product end to end</p>\n      <div class=\"chips\">\n        <span class=\"chip ind\">gaming</span>\n        <span class=\"chip\">remote india</span>\n        <span class=\"chip mono\">not stated</span>\n      </div>\n      <p class=\"skills-head\">Watch out for</p><ul class=\"blockers\"><li><b>Deeply technical (L4)</b> — expects hands-on code/SQL/ML depth</li></ul>\n      <p class=\"skills-head\">Skills asked for</p><div class=\"skills\"><span class=\"sk gap\">react</span><span class=\"sk gap\">python</span><span class=\"sk gap\">git</span><span class=\"sk \">postgresql</span><span class=\"sk \">next.js</span><span class=\"sk \">go</span><span class=\"sk \">firebase</span><span class=\"sk \">api design</span><span class=\"sk gap\">debugging</span></div>\n    </div>\n\n    <div class=\"tier4\">\n      <h3 class=\"sec\">Full job description</h3>\n      <div class=\"jd\"><p>Position: Full Stack Product Intern – Early Team (Internship / Long‑term Contributor)\nLocation: Remote\nEngagement: Internship / Contributor Track → Potential Core Team</p><p>About Hibiscustech\nHibiscustech is building the next‑gen AI‑powered online gaming playground under its PsyPlay brand, reimagining timeless games like Chess, Ludo, Connect 4, Poker and more with smart features, deep analytics, and a delightful multiplayer experience.\nWe’re not just building games, we’re building an intelligent, scalable gaming platform and the foundation for future AI‑powered consumer products.\nIf you want to work on meaningful problems, learn fast, and shape a product from the ground up, we’d love to hear from you.</p><p>Why Join Us?\n· Early seat on a fast‑moving, ambitious team\n· Build a product that people love, not just a line on your CV\n· Chance to earn trust and grow into a core technical role as the company grows\n· Startup mindset: learn by doing, ship fast, take ownership</p><p>We value builders who think long‑term and take pride in their craft.</p><p>What you’ll learn and build\nAs a Full Stack Product Engineer Intern, you’ll work across both frontend and backend in a guided way.\nFrontend Learning (React + Gameplay UI)\nYou will learn to:\n· Build modern interactive UIs using Next.js\n· Create clean components for game screens, dashboards, profiles\n· Integrate real-time features (gameplay, replays, leaderboards)\n· Work with animations (Canvas/SVG basics) for delightful UX\nBackend Learning (APIs + Game Platform Core)\nYou will learn to:\n· Build backend services in Go or Python\n· Design APIs for game matchmaking, player stats, history\n· Work with PostgreSQL databases (schemas + queries)\n· Connect authentication systems (Firebase-based)\n· Understand scalable backend architecture step-by-step</p><p>What We’re Looking For\nYou don’t need to know everything, but you should have:\nRequired\n· Basic programming confidence (React/Python/C++ etc.)\n· Interest in full-stack development\n· Willingness to learn React + backend systems\n· Comfort with Git + debugging\n· Serious builder mindset\nGreat to Have (Not Required)\n· React projects / portfolio\n· Any backend/API exposure\n· Love for games, chess, or competitive systems\n· Curiosity about AI</p><p>You should apply if: \nYou’re not just looking for a certificate or stipend. You want to build something meaningful.\nYou understand the uncertainty and excitement of early‑stage startups.\nYou care about clean code, thoughtful design, and users.\nYou’re proactive, self‑driven, and communicate well.\nYou’re curious about gaming, AI, or both.</p><p>What’s In It for You?\nReal ownership: your work directly impacts the product &amp; players\nLearn from founders and senior engineers\nBuild credibility for a future core role or co‑founder‑level opportunities\nFlexible hours &amp; remote‑friendly\nPossibility of paid or equity‑based role as you grow with the company</p></div>\n    </div>"};
+const EXPLAIN = {
+  shortlist: ["Shortlist — not built yet", "Needs a small new table; job_tracking moved to the tracker module (D-42)."],
+  tailor: ["Tailor résumé — not built yet", "Will POST this JD to resume-builder's /api/triage endpoint (D-37/D-38)."]
+};
+var dp = document.getElementById('dp');
+var split = document.getElementById('split');
+var cards = Array.prototype.slice.call(document.querySelectorAll('.card'));
+
+// ── detail pane: closed until a job is chosen ───────────────────────────
+function openJob(c) {
+  cards.forEach(function (x) { x.classList.remove('selected'); });
+  c.classList.add('selected');
+  dp.innerHTML = '<div class="dp-bar"><button class="dp-close" id="dpx">Close ✕</button></div>' + DETAIL[c.dataset.id];
+  split.classList.remove('closed');
+  dp.scrollTop = 0;
+  document.getElementById('dpx').addEventListener('click', closeJob);
+  wire();
+}
+function closeJob() {
+  split.classList.add('closed');
+  dp.innerHTML = '';
+  cards.forEach(function (x) { x.classList.remove('selected'); });
+}
+cards.forEach(function (c) { c.addEventListener('click', function () { openJob(c); }); });
+document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeJob(); });
+
+// ── filters ─────────────────────────────────────────────────────────────
+// Each group is a set of ALLOWED values; a chip toggles its value in or out.
+// "Hide IIT/IIM" is the one inverted control — it excludes rather than includes,
+// which is why it starts inactive and reads as an action rather than a category.
+var allow = { verdict: {}, remote: {}, exp: {}, domain: {} };
+var EXCLUSIVE = { iit: false, ai: false, tech: false };
+document.querySelectorAll('.fchip[data-f]').forEach(function (b) {
+  var f = b.dataset.f;
+  if (!(f in EXCLUSIVE)) allow[f][b.dataset.v] = b.classList.contains('active');
+  b.addEventListener('click', function () {
+    b.classList.toggle('active');
+    if (f in EXCLUSIVE) EXCLUSIVE[f] = b.classList.contains('active');
+    else allow[f][b.dataset.v] = b.classList.contains('active');
+    apply();
+  });
+});
+
+function apply() {
+  var shown = 0;
+  cards.forEach(function (c) {
+    // A job with no domain is never hidden by the Industry chips — it has not been
+    // categorised, which is not the same as belonging to an excluded category.
+    var domainOk = !c.dataset.domain || allow.domain[c.dataset.domain] !== false;
+    var ok = allow.verdict[c.dataset.verdict] &&
+             allow.remote[c.dataset.remote] &&
+             allow.exp[c.dataset.exp] &&
+             domainOk &&
+             !(EXCLUSIVE.iit && c.dataset.iit === '1') &&
+             !(EXCLUSIVE.ai && c.dataset.ai !== '1') &&
+             !(EXCLUSIVE.tech && c.dataset.tech === '1');
+    c.classList.toggle('hidden', !ok);
+    if (ok) shown++;
+  });
+  // A company heading whose jobs are all filtered out must go too, or the list fills
+  // with headings for nothing.
+  document.querySelectorAll('.co-head').forEach(function (h) {
+    var any = false, n = h.nextElementSibling;
+    while (n && n.classList.contains('card')) { if (!n.classList.contains('hidden')) any = true; n = n.nextElementSibling; }
+    h.classList.toggle('hidden', !any);
+  });
+  document.getElementById('fcount').textContent = shown + ' of ' + cards.length + ' shown';
+  document.getElementById('empty').hidden = shown > 0;
+  // If the open job just got filtered away, stop showing it.
+  var sel = document.querySelector('.card.selected');
+  if (sel && sel.classList.contains('hidden')) closeJob();
+}
+
+function wire() {
+  document.querySelectorAll('[data-explain]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var e = EXPLAIN[b.dataset.explain];
+      document.getElementById('mt').textContent = e[0];
+      document.getElementById('mb').textContent = e[1];
+      document.getElementById('modal').classList.add('open');
+    });
+  });
+}
+document.getElementById('mc').addEventListener('click', function () {
+  document.getElementById('modal').classList.remove('open');
+});
+apply();
+
+// ── tabs: Jobs / Remote Companies (D-142) ────────────────────────────────
+document.querySelectorAll('.navitem[data-tab]').forEach(function (t) {
+  t.addEventListener('click', function () {
+    document.querySelectorAll('.navitem[data-tab]').forEach(function (x) { x.classList.remove('active'); });
+    t.classList.add('active');
+    document.getElementById('view-jobs').classList.toggle('hidden', t.dataset.tab !== 'jobs');
+    document.getElementById('view-companies').classList.toggle('hidden', t.dataset.tab !== 'companies');
+  });
+});
+
+// ── companies tab: optional, off-by-default "Role level" filter (D-140) ──
+// Internal names (seniority/evidence_seniority) kept as-is — this is a display-label-only
+// rename; "Fit" was rejected as ambiguous with computeRecommendation's unrelated background-
+// match "fit", and reads as a holistic judgment this bucket doesn't actually make.
+// Empty set = show everything, including rows with no seniority snapshot at all — an
+// active filter only ever narrows within KNOWN buckets, it never hides "not stated".
+var coRows = Array.prototype.slice.call(document.querySelectorAll('.co-row'));
+var senioritySet = {};
+var hiringSet = {};
+var domainSet = {};
+// D-144: Hiring status and Industry work the same "empty set = show everyone" way as Role
+// level — an active filter narrows within KNOWN values, never hides a company the filter
+// can't evaluate. Hiring status is always knowable (computed at build time from jobs, see
+// main()), but Industry is not — a company with no domain data is never hidden by it.
+document.querySelectorAll('.fchip[data-cf]').forEach(function (b) {
+  var f = b.dataset.cf;
+  var set = f === 'senior' ? senioritySet : f === 'hiring' ? hiringSet : domainSet;
+  b.addEventListener('click', function () {
+    b.classList.toggle('active');
+    if (b.classList.contains('active')) set[b.dataset.v] = true;
+    else delete set[b.dataset.v];
+    applyCompanies();
+  });
+});
+function applyCompanies() {
+  var seniorActive = Object.keys(senioritySet).length > 0;
+  var hiringActive = Object.keys(hiringSet).length > 0;
+  var domainActive = Object.keys(domainSet).length > 0;
+  var shown = 0;
+  coRows.forEach(function (r) {
+    var s = r.dataset.seniority;
+    var seniorOk = !seniorActive || !s || senioritySet[s];
+    var hiringOk = !hiringActive || hiringSet[r.dataset.hiring];
+    var rowDomains = r.dataset.domains ? r.dataset.domains.split(',') : [];
+    var domainOk = !domainActive || !rowDomains.length || rowDomains.some(function (d) { return domainSet[d]; });
+    var ok = seniorOk && hiringOk && domainOk;
+    r.classList.toggle('hidden', !ok);
+    if (ok) shown++;
+  });
+  document.getElementById('cofcount').textContent = shown + ' of ' + coRows.length + ' shown';
+}
+applyCompanies();
+</script>

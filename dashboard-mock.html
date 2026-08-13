@@ -1,0 +1,494 @@
+<style>
+  :root {
+    --surface:#f4fafd; --lowest:#ffffff; --low:#eef5f7; --container:#e8eff1;
+    --ink:#161d1f; --ink-var:#584140; --outline:#8c706f; --outline-sub:#e0bfbd;
+    --primary:#ae2f34; --primary-c:#ffdad8; --on-primary-c:#6d0010;
+    --secondary:#006a65; --secondary-c:#d8f6f2;
+    --yes-t:#2e7d32; --yes-b:#e8f5e9; --yes-br:#c8e6c9;
+    --maybe-t:#a35300; --maybe-b:#fff3e0; --maybe-br:#ffe0b2;
+    --no-t:#6b5a58; --no-b:#f1e9e8; --no-br:#ddc9c7;
+    --sans:-apple-system,"Segoe UI",ui-sans-serif,system-ui,sans-serif;
+    --mono:ui-monospace,"SFMono-Regular",Menlo,monospace;
+    --r-sm:8px; --r-md:12px; --r-lg:16px;
+  }
+  @media (prefers-color-scheme: dark){:root{
+    --surface:#14181a; --lowest:#0d1011; --low:#1b2022; --container:#20262a;
+    --ink:#ebf2f4; --ink-var:#d8c1bf; --outline:#a68a88; --outline-sub:#4a3838;
+    --primary:#ffb3b0; --primary-c:#6d0010; --on-primary-c:#ffdad8;
+    --secondary:#5dd9d0; --secondary-c:#00504c;
+    --yes-t:#8bd18f; --yes-b:#16281a; --yes-br:#2e4a33;
+    --maybe-t:#ffb877; --maybe-b:#2e2110; --maybe-br:#4d3a1c;
+    --no-t:#b9a29f; --no-b:#241d1c; --no-br:#3a2e2c;}}
+  :root[data-theme="dark"]{
+    --surface:#14181a; --lowest:#0d1011; --low:#1b2022; --container:#20262a;
+    --ink:#ebf2f4; --ink-var:#d8c1bf; --outline:#a68a88; --outline-sub:#4a3838;
+    --primary:#ffb3b0; --primary-c:#6d0010; --on-primary-c:#ffdad8;
+    --secondary:#5dd9d0; --secondary-c:#00504c;
+    --yes-t:#8bd18f; --yes-b:#16281a; --yes-br:#2e4a33;
+    --maybe-t:#ffb877; --maybe-b:#2e2110; --maybe-br:#4d3a1c;
+    --no-t:#b9a29f; --no-b:#241d1c; --no-br:#3a2e2c;}
+  :root[data-theme="light"]{
+    --surface:#f4fafd; --lowest:#ffffff; --low:#eef5f7; --container:#e8eff1;
+    --ink:#161d1f; --ink-var:#584140; --outline:#8c706f; --outline-sub:#e0bfbd;
+    --primary:#ae2f34; --primary-c:#ffdad8; --on-primary-c:#6d0010;
+    --secondary:#006a65; --secondary-c:#d8f6f2;
+    --yes-t:#2e7d32; --yes-b:#e8f5e9; --yes-br:#c8e6c9;
+    --maybe-t:#a35300; --maybe-b:#fff3e0; --maybe-br:#ffe0b2;
+    --no-t:#6b5a58; --no-b:#f1e9e8; --no-br:#ddc9c7;}
+
+  *{box-sizing:border-box}
+  body{font-family:var(--sans);background:var(--surface);color:var(--ink);margin:0;
+    padding:14px 16px 22px;-webkit-font-smoothing:antialiased}
+
+  .topbar{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  h1{font-size:18px;font-weight:700;letter-spacing:-.01em;margin:0}
+  h1 .dot{color:var(--primary)}
+  .count{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:12px;color:var(--ink-var)}
+  .note{display:flex;gap:8px;background:var(--low);border:1px solid var(--outline-sub);
+    border-radius:var(--r-md);padding:7px 11px;margin:8px 0;font-size:12px;color:var(--ink-var);line-height:1.5}
+  .note strong{color:var(--ink)}
+  code{font-family:var(--mono);font-size:11px;background:var(--container);padding:1px 4px;border-radius:4px}
+  .prop{font-size:9px;text-transform:uppercase;letter-spacing:.05em;font-weight:700;color:var(--primary);
+    border:1px solid var(--primary);border-radius:999px;padding:0 5px;vertical-align:middle;white-space:nowrap}
+
+  .filterbar{display:flex;flex-wrap:wrap;gap:6px;padding:8px 10px;background:var(--lowest);
+    border:1px solid var(--outline-sub);border-radius:var(--r-lg);margin-bottom:12px;align-items:center}
+  .fgroup{display:flex;align-items:center;gap:4px;padding-right:8px;border-right:1px solid var(--outline-sub)}
+  .flabel{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-var)}
+  .fchip{font-size:11.5px;padding:3px 8px;border-radius:999px;border:1px solid var(--outline-sub);
+    color:var(--ink-var);background:var(--lowest);cursor:pointer;white-space:nowrap;font-family:inherit}
+  .fchip.active{background:var(--primary-c);color:var(--on-primary-c);border-color:transparent;font-weight:600}
+  .fchip.more{border-style:dashed;font-weight:600}
+
+  /* Side-by-side held down to 640px so a narrow pane still shows the split */
+  .split{display:grid;grid-template-columns:minmax(240px,.6fr) minmax(0,1fr);gap:12px;align-items:start}
+  @media (max-width:640px){.split{grid-template-columns:1fr}.pane{position:static!important;max-height:none!important}}
+  .pane{border:1px solid var(--outline-sub);border-radius:var(--r-lg);background:var(--lowest);
+    max-height:calc(100vh - 34px);overflow-y:auto;position:sticky;top:14px}
+  .listpane{padding:8px}
+  .detailpane{padding:20px 24px 26px}
+
+  .co-head{display:flex;align-items:center;gap:7px;margin:12px 4px 6px}
+  .co-head:first-child{margin-top:2px}
+  .co-head h2{font-size:11px;font-weight:700;margin:0;color:var(--ink-var);text-transform:uppercase;letter-spacing:.05em}
+  .co-head .line{flex:1;height:1px;background:var(--outline-sub)}
+
+  .card{background:transparent;border:1px solid transparent;border-radius:var(--r-md);padding:10px 11px;
+    cursor:pointer;display:block;width:100%;text-align:left;font:inherit;color:inherit}
+  .card:hover{background:var(--low)}
+  .card.selected{background:var(--low);border-color:var(--outline-sub);box-shadow:inset 3px 0 0 var(--primary)}
+  .card:focus-visible{outline:2px solid var(--primary);outline-offset:-2px}
+  .card.viewed .job-title{color:var(--ink-var);font-weight:600}
+  .card-top{display:flex;align-items:flex-start;gap:7px;margin-bottom:4px}
+  .job-title{font-size:14px;font-weight:700;margin:0;flex:1;text-wrap:balance;line-height:1.3}
+
+  .verdict{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;
+    padding:3px 7px;border-radius:999px;border:1px solid transparent;white-space:nowrap}
+  .verdict.yes{color:var(--yes-t);background:var(--yes-b);border-color:var(--yes-br)}
+  .verdict.maybe{color:var(--maybe-t);background:var(--maybe-b);border-color:var(--maybe-br)}
+  .verdict.no{color:var(--no-t);background:var(--no-b);border-color:var(--no-br)}
+  .verdict.lg{font-size:13px;padding:7px 15px;letter-spacing:.05em}
+
+  .summary{font-size:12px;line-height:1.45;color:var(--ink);margin:0 0 6px;
+    border-left:2px solid var(--secondary);padding-left:8px}
+  .meta{font-size:11px;color:var(--ink-var);display:flex;flex-wrap:wrap;gap:3px 5px;margin-bottom:5px}
+  .sep{opacity:.4}
+  .tags{display:flex;flex-wrap:wrap;gap:4px}
+  .tag{font-size:10.5px;padding:2px 7px;border-radius:999px;background:var(--container);
+    color:var(--ink-var);border:1px solid var(--outline-sub)}
+  .tag.ind{color:var(--secondary);background:var(--secondary-c);border-color:transparent;font-weight:600}
+  .tag.blk{color:var(--maybe-t);background:var(--maybe-b);border-color:var(--maybe-br);font-weight:600}
+  .sal{font-family:var(--mono);font-variant-numeric:tabular-nums}
+  .sal.soft{font-style:italic;font-family:var(--sans)}
+
+  /* ===== TIER 1 — decide in 3 seconds ===== */
+  .tier1{border:1px solid var(--outline-sub);border-radius:var(--r-md);background:var(--low);
+    padding:15px 17px;margin-bottom:20px}
+  .t1-top{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:11px}
+  .t1-q{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-var)}
+  .contact-chip{font-size:11px;font-weight:600;padding:4px 10px;border-radius:999px;
+    border:1px solid var(--secondary);color:var(--secondary);margin-left:auto}
+  .contact-chip.none{border-color:var(--outline-sub);color:var(--ink-var);font-weight:400;font-style:italic}
+  .t1-why{font-size:14px;line-height:1.55;margin:0}
+  .blockers{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:7px}
+  .blockers li{font-size:12.5px;line-height:1.45;padding:7px 11px;border-radius:var(--r-sm);
+    background:var(--maybe-b);border:1px solid var(--maybe-br);color:var(--maybe-t);
+    display:flex;gap:8px;align-items:flex-start}
+  .blockers li b{font-weight:700}
+
+  /* ===== TIER 3 — what is this job (now below the actions) ===== */
+  .tier2{border-top:1px solid var(--outline-sub);padding-top:18px;margin-bottom:22px}
+  .t2-summary{font-size:15px;line-height:1.6;margin:0 0 13px;max-width:62ch}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+  .chip{font-size:12.5px;padding:5px 12px;border-radius:999px;border:1px solid var(--outline-sub);background:var(--lowest)}
+  .chip.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+  .chip.soft{color:var(--ink-var);font-style:italic}
+  .chip.ind{color:var(--secondary);background:var(--secondary-c);border-color:transparent;font-weight:600}
+  .skills-head{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+    color:var(--ink-var);margin:0 0 7px;display:flex;align-items:center;gap:7px}
+  .skills{display:flex;flex-wrap:wrap;gap:5px}
+  .sk{font-size:12px;padding:4px 10px;border-radius:999px;border:1px solid var(--outline-sub);
+    background:var(--lowest);color:var(--ink-var)}
+  .sk.have{border-color:var(--yes-br);background:var(--yes-b);color:var(--yes-t);font-weight:600}
+  .sk.gap{border-style:dashed}
+
+  /* ===== TIER 2 — act (immediately after the verdict) ===== */
+  .tier3{margin-bottom:22px}
+  .actions{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px}
+  .btn{font-size:13px;font-weight:600;padding:8px 16px;border-radius:999px;border:1px solid var(--outline-sub);
+    background:var(--lowest);color:var(--ink);cursor:pointer;text-decoration:none;display:inline-block;font-family:inherit}
+  .btn.primary{background:var(--primary);color:var(--lowest);border-color:transparent}
+  .btn.icon{padding:8px 12px}
+  .contact-box{font-size:12.5px;line-height:1.7;color:var(--ink-var)}
+  .contact-box .k{display:inline-block;min-width:96px;color:var(--ink-var)}
+  .contact-box .v{color:var(--ink)}
+  .contact-box a{color:var(--primary)}
+  .contact-empty{font-size:12.5px;color:var(--ink-var);font-style:italic}
+
+  /* ===== TIER 4 — full JD ===== */
+  .tier4{border-top:1px solid var(--outline-sub);padding-top:18px}
+  .sec{font-size:15px;font-weight:700;margin:0 0 10px}
+  .jd{font-size:14px;line-height:1.7;max-width:66ch}
+  .jd p{margin:0 0 12px}
+  .jd h4{font-size:13.5px;font-weight:700;margin:18px 0 6px}
+  .jd ul{margin:0 0 12px;padding-left:20px}
+  .jd li{margin-bottom:4px}
+  .jd-src{font-size:11px;color:var(--ink-var);margin-top:18px;padding-top:10px;
+    border-top:1px dashed var(--outline-sub);max-width:66ch}
+  .fixture{color:var(--ink-var);font-style:italic;font-size:12.5px}
+
+  .id-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .logo{width:38px;height:38px;border-radius:var(--r-sm);background:var(--container);
+    border:1px solid var(--outline-sub);display:flex;align-items:center;justify-content:center;
+    font-weight:700;font-size:14px;color:var(--ink-var);flex:0 0 auto}
+  .id-row .co{font-size:13.5px;font-weight:600}
+  .id-row .src{font-size:11px;color:var(--ink-var)}
+  .detailpane h2{font-size:24px;font-weight:700;margin:0 0 5px;letter-spacing:-.015em;text-wrap:balance;line-height:1.2}
+  .subline{font-size:13px;color:var(--ink-var);margin:0 0 16px}
+
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;
+    justify-content:center;z-index:100;padding:20px}
+  .modal.open{display:flex}
+  .modal-box{background:var(--lowest);border-radius:var(--r-lg);padding:22px 24px;max-width:420px;
+    border:1px solid var(--outline-sub)}
+  .modal-box h3{margin:0 0 9px;font-size:17px}
+  .modal-box p{margin:0 0 16px;font-size:13.5px;line-height:1.6;color:var(--ink-var)}
+</style>
+
+<div class="topbar">
+  <h1>job<span class="dot">·</span>scout</h1>
+  <span class="count">4 jobs · 4 companies</span>
+</div>
+<div class="note">
+  <span>⚑</span>
+  <span><strong>Mock, not live data.</strong> A1Apps uses the real JD you pasted; Acme AI is the test fixture. Anything marked <span class="prop">proposed</span> does not exist yet — role summary (D-92), years-of-experience extraction, skill-gap comparison, and Shortlist.</span>
+</div>
+
+<div class="filterbar">
+  <div class="fgroup"><span class="flabel">Should I apply?</span>
+    <button class="fchip active">Yes</button><button class="fchip active">Maybe</button><button class="fchip">Probably not</button></div>
+  <div class="fgroup"><span class="flabel">Industry</span>
+    <button class="fchip active">AI/ML</button><button class="fchip active">Consumer</button><button class="fchip active">Support</button></div>
+  <div class="fgroup"><span class="flabel">Posted</span><button class="fchip active">Past month ▾</button></div>
+  <div class="fgroup"><span class="flabel">AI focus</span><button class="fchip">AI only</button></div>
+  <div class="fgroup"><span class="flabel">IIT/IIM</span><button class="fchip active">Hide</button></div>
+  <div class="fgroup"><span class="flabel">Background</span>
+    <button class="fchip">Support</button><button class="fchip">B2B SaaS</button><button class="fchip">Analytics</button></div>
+  <div class="fgroup" style="border:none"><span class="flabel">Technical</span>
+    <button class="fchip active">Not very</button><button class="fchip active">Somewhat</button><button class="fchip">Very</button></div>
+  <button class="fchip more">+ More</button>
+</div>
+
+<div class="split">
+  <div class="pane listpane">
+    <div class="co-head"><h2>Acme AI</h2><span class="line"></span></div>
+    <button class="card selected" data-i="0">
+      <div class="card-top"><p class="job-title">Product Manager, AI Platform</p><span class="verdict yes">Yes</span></div>
+      <p class="summary">Own the AI platform — experiments, APIs, SQL to evaluate LLM performance.</p>
+      <div class="meta"><span>Remote · India</span><span class="sep">·</span><span>2d ago</span><span class="sep">·</span><span class="sal">₹24–30L</span></div>
+      <div class="tags"><span class="tag ind">AI/ML</span><span class="tag">Very technical</span><span class="tag">B2B SaaS</span></div>
+    </button>
+
+    <div class="co-head"><h2>A1Apps</h2><span class="line"></span></div>
+    <button class="card" data-i="1">
+      <div class="card-top"><p class="job-title">Associate Product Manager, Experimentation</p><span class="verdict maybe">Maybe</span></div>
+      <p class="summary">Run A/B tests on a consumer subscription product — funnel analysis, retention, growth.</p>
+      <div class="meta"><span>Remote · India</span><span class="sep">·</span><span>3d ago</span><span class="sep">·</span><span class="sal soft">not stated</span></div>
+      <div class="tags"><span class="tag ind">Consumer</span><span class="tag">Somewhat technical</span><span class="tag blk">3–6 yrs</span></div>
+    </button>
+
+    <div class="co-head"><h2>Northstar Fintech</h2><span class="line"></span></div>
+    <button class="card viewed" data-i="2">
+      <div class="card-top"><p class="job-title">Junior Product Manager</p><span class="verdict no">Probably not</span></div>
+      <p class="summary">Own the lending checkout flow — funnel analysis, A/B tests, risk &amp; compliance.</p>
+      <div class="meta"><span>Remote · India</span><span class="sep">·</span><span>6d ago</span><span class="sep">·</span><span class="sal soft">"competitive"</span></div>
+      <div class="tags"><span class="tag ind">Fintech</span><span class="tag blk">IIT/IIM</span></div>
+    </button>
+
+    <div class="co-head"><h2>Support Squad Inc</h2><span class="line"></span></div>
+    <button class="card viewed" data-i="3">
+      <div class="card-top"><p class="job-title">Product Associate</p><span class="verdict maybe">Maybe</span></div>
+      <p class="summary">Improve the agent-facing ticketing console — support feedback into backlog.</p>
+      <div class="meta"><span>Remote · India</span><span class="sep">·</span><span>1d ago</span><span class="sep">·</span><span class="sal">₹12–15L</span></div>
+      <div class="tags"><span class="tag ind">Support tooling</span><span class="tag">Not very technical</span></div>
+    </button>
+  </div>
+
+  <!-- Static first job so the pane renders with scripts blocked -->
+  <div class="pane detailpane" id="dp">
+    <div class="id-row">
+      <div class="logo">AA</div>
+      <div><div class="co">Acme AI</div><div class="src">via Greenhouse</div></div>
+    </div>
+    <h2>Product Manager, AI Platform</h2>
+    <p class="subline">Remote · India · Posted 9 Jul · 2 days ago</p>
+
+    <div class="tier1">
+      <div class="t1-top">
+        <span class="t1-q">Should I apply?</span>
+        <span class="verdict lg yes">Yes</span>
+        <span class="contact-chip">✉ Named contact</span>
+      </div>
+      <p class="t1-why">AI focus plus a direct overlap with your B2B SaaS product work. Nothing here blocks you.</p>
+    </div>
+
+    <div class="tier3">
+      <div class="actions">
+        <a class="btn primary" href="#">Apply on company site ↗</a>
+        <button class="btn" data-explain="shortlist">☆ Shortlist</button>
+        <button class="btn" data-explain="tailor">Tailor résumé</button>
+        <a class="btn" href="#">View posting</a>
+        <button class="btn icon" title="Tags look right">👍</button>
+        <button class="btn icon" title="Something's wrong">👎</button>
+      </div>
+      <div class="contact-box">
+        <div><span class="k">Recruiter</span><span class="v">Priya Menon</span></div>
+        <div><span class="k">Email</span><a href="#">priya@acme.ai</a></div>
+        <div><span class="k">LinkedIn</span><a href="#">linkedin.com/in/priyamenon</a></div>
+      </div>
+    </div>
+
+    <div class="tier2">
+      <p class="t2-summary">Own the AI platform product — designing experiments, working with APIs, and writing SQL to evaluate how the models are performing. <span class="prop">proposed</span></p>
+      <div class="chips">
+        <span class="chip ind">AI / ML</span>
+        <span class="chip mono">₹24–30L / yr</span>
+        <span class="chip">Full-time</span>
+        <span class="chip">Entry level OK</span>
+      </div>
+      <p class="skills-head">Skills asked for <span class="prop">gap proposed</span></p>
+      <div class="skills">
+        <span class="sk have">✓ A/B testing</span>
+        <span class="sk gap">SQL</span>
+        <span class="sk gap">LLM evaluation</span>
+        <span class="sk gap">APIs</span>
+      </div>
+    </div>
+
+    <div class="tier4">
+      <h3 class="sec">Full job description</h3>
+      <div class="jd">
+        <p>We are hiring a <strong>Product Manager</strong> for our AI platform. Work from anywhere in India. You will write SQL, work with APIs, and run experiments. IIT/IIM preferred but not required.</p>
+        <ul><li>SQL</li><li>A/B testing</li><li>LLM evaluation</li></ul>
+        <p class="fixture">↑ The complete stored JD — the test fixture really is this short. Click A1Apps for a real one.</p>
+      </div>
+      <p class="jd-src">Stored at ingest as <code>jd_clean</code>. Kept in full deliberately (D-37) — postings get taken down, and the link dies with them.</p>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <h3 id="mt">Not built yet</h3>
+    <p id="mb"></p>
+    <button class="btn primary" id="mc">Got it</button>
+  </div>
+</div>
+
+<script>
+const EXPLAIN = {
+  shortlist: ["Shortlist — not built yet",
+    "This will mark the job as one you're pursuing, and show it as shortlisted in the list. It needs a small new table in job-scout: job_tracking was removed in Session 12 when the tracker split out (D-42), and job_feedback only holds per-field corrections (D-84)."],
+  tailor: ["Tailor résumé — not built yet",
+    "This will POST this job's JD text to resume-builder's /api/triage endpoint, get an application id back, and open resume-builder directly on it. No copy-paste. Verified the endpoint accepts exactly the field job-scout already stores (jd_clean)."]
+};
+
+const jobs = [null,
+{
+  t:"Associate Product Manager, Experimentation", co:"A1Apps", ini:"A1", src:"LinkedIn",
+  sub:"Remote · India · Posted 8 Jul · 3 days ago",
+  v:"Maybe", vc:"maybe",
+  why:"Experimentation and funnel analysis genuinely match how you already think, and it's a consumer subscription product. But they're asking for 3–6 years of PM experience, and the tooling list is mostly new to you.",
+  contact:null,
+  blockers:[["3–6 years of PM/Growth/Analytics experience","you're transitioning in, so this is a stretch"],
+            ["Tools you haven't used","Firebase, GA4, BigQuery and SQL are all listed as required"]],
+  summary:"Design and run A/B tests on a consumer subscription product — analysing funnels, finding where users drop off, and turning the results into product decisions.",
+  chips:'<span class="chip ind">Consumer / B2C</span><span class="chip soft">Salary not stated</span><span class="chip">Full-time</span><span class="chip" style="color:var(--maybe-t);border-color:var(--maybe-br);background:var(--maybe-b);font-weight:600">3–6 yrs asked</span>',
+  skills:'<span class="sk have">✓ A/B testing</span><span class="sk have">✓ Funnel analysis</span><span class="sk gap">SQL</span><span class="sk gap">Firebase</span><span class="sk gap">GA4</span><span class="sk gap">BigQuery</span><span class="sk gap">Adapty / RevenueCat</span>',
+  jd:`<p><strong>About A1Apps.</strong> A1Apps builds and scales consumer digital products with a strong focus on execution, experimentation, and data-driven growth.</p>
+      <h4>Role Summary</h4>
+      <p>We are looking for an Associate Product Manager to join our Experimentation team. In this role, you will design and execute A/B tests, analyze product performance, identify growth opportunities, and drive data-backed product decisions. You will work closely with design, engineering, and analytics teams to improve user experience and business outcomes.</p>
+      <h4>Key Responsibilities</h4>
+      <ul>
+        <li>Design, execute, and analyze A/B tests from hypothesis to recommendation.</li>
+        <li>Investigate product and user behavior data to identify trends, opportunities, and issues.</li>
+        <li>Improve conversion and retention metrics by identifying and addressing user drop-off points.</li>
+        <li>Collaborate with cross-functional teams to implement and evaluate product improvements.</li>
+        <li>Communicate insights and recommendations clearly to stakeholders.</li>
+      </ul>
+      <h4>Requirements</h4>
+      <ul>
+        <li>3–6 years of experience in Product Management, Growth, Analytics, or a related role within a B2C product environment.</li>
+        <li>Experience running experiments and understanding experimentation fundamentals.</li>
+        <li>Strong analytical and problem-solving skills.</li>
+        <li>Comfortable working with data, user insights, and stakeholder communication.</li>
+        <li>Ability to present findings in a clear and concise manner.</li>
+      </ul>
+      <h4>Tools &amp; Skills</h4>
+      <ul><li>Firebase</li><li>Google Analytics 4 (GA4)</li><li>BigQuery</li><li>SQL</li></ul>
+      <h4>Preferred Qualifications</h4>
+      <ul>
+        <li>Experience working on subscription-based products.</li>
+        <li>Familiarity with churn, retention, and customer lifetime value (LTV) metrics.</li>
+        <li>Experience with Adapty or RevenueCat.</li>
+        <li>Ability to write SQL queries independently.</li>
+      </ul>
+      <h4>Why Join A1Apps?</h4>
+      <p><strong>High-Speed Execution.</strong> Ideas move quickly from concept to experiment, allowing you to see the impact of your work faster.</p>
+      <p><strong>Ownership and Autonomy.</strong> You will own initiatives end-to-end and have the opportunity to influence product direction directly.</p>
+      <p><strong>Visible Impact.</strong> The outcomes of your experiments contribute directly to key business metrics and company growth.</p>`
+},
+{
+  t:"Junior Product Manager", co:"Northstar Fintech", ini:"NF", src:"LinkedIn",
+  sub:"Remote · India · Posted 5 Jul · 6 days ago",
+  v:"Probably not", vc:"no",
+  why:"The funnel and A/B testing work fits your analytics background — but IIT/IIM is listed as preferred, and that barrier pulls this down a level.",
+  contact:null,
+  blockers:[["IIT/IIM preferred","this is what dropped the answer a level"]],
+  summary:"Own the lending checkout flow end to end — conversion funnel analysis, A/B tests, and coordination with risk and compliance teams.",
+  chips:'<span class="chip ind">Fintech</span><span class="chip soft">"Competitive" — no figure</span><span class="chip">Full-time</span>',
+  skills:'<span class="sk have">✓ Funnel analysis</span><span class="sk have">✓ A/B testing</span><span class="sk gap">SQL</span><span class="sk gap">KYC / compliance</span>',
+  jd:`<p>Northstar is a digital lending platform serving underbanked borrowers across tier-2 and tier-3 India. We process loan applications end to end, from eligibility check through disbursal, and we are hiring a Junior Product Manager to own our checkout experience.</p>
+      <h4>The role</h4>
+      <p>Checkout is where our funnel leaks hardest. Roughly a third of applicants who reach the document-upload step never complete it, and understanding why — then fixing it — is the core of this job.</p>
+      <ul>
+        <li>Instrument and analyse the full application funnel, identifying where drop-off concentrates</li>
+        <li>Design and run A/B tests on form structure, copy, and document-upload flows</li>
+        <li>Work with the risk team on which verification steps are legally mandatory versus internal policy</li>
+        <li>Coordinate with compliance on any change touching KYC</li>
+      </ul>
+      <h4>Requirements</h4>
+      <ul>
+        <li>0–2 years experience; graduates from IIT/IIM preferred</li>
+        <li>Strong analytical skills — comfortable pulling your own data</li>
+        <li>Interest in financial inclusion and Indian lending regulation</li>
+      </ul>
+      <p>We offer a competitive salary and great benefits, including health cover for you and dependents.</p>`
+},
+{
+  t:"Product Associate", co:"Support Squad Inc", ini:"SS", src:"Greenhouse",
+  sub:"Remote · India · Posted 10 Jul · 1 day ago",
+  v:"Maybe", vc:"maybe",
+  why:"The closest background match here — this is literally support tooling, which is where you've actually worked. But it's a non-AI domain and the band is lower than the roles above.",
+  contact:{name:"Arjun Rao",email:null,li:"linkedin.com/in/arjunrao"},
+  blockers:[],
+  summary:"Improve the agent-facing ticketing console — gathering feedback from support teams and turning it into a prioritised backlog.",
+  chips:'<span class="chip ind">Support tooling</span><span class="chip mono">₹12–15L / yr</span><span class="chip">Full-time</span><span class="chip">Entry level OK</span>',
+  skills:'<span class="sk have">✓ Stakeholder interviews</span><span class="sk have">✓ Backlog grooming</span><span class="sk have">✓ Support operations</span>',
+  jd:`<p>Support Squad builds the ticketing and knowledge-base tooling that customer support teams live inside all day. Our users are support agents, and our product succeeds when their handle time drops without their quality scores falling.</p>
+      <h4>What this role owns</h4>
+      <ul>
+        <li>The agent-facing ticketing console — the screen agents spend most of their day in</li>
+        <li>A structured feedback loop with support teams: shadowing, recurring interviews, a triaged inbound channel</li>
+        <li>Turning that qualitative input into a prioritised, well-specified backlog rather than a wishlist</li>
+        <li>Writing release notes agents actually read, and measuring whether features get adopted</li>
+      </ul>
+      <h4>Who this suits</h4>
+      <p>Someone who has worked in or close to a support function and understands the texture of the job — queue pressure, escalation paths, the difference between a macro that saves time and one that gets ignored. Prior support experience is genuinely valued here rather than treated as a detour.</p>
+      <ul>
+        <li>1–3 years in support operations, product, or a hybrid role</li>
+        <li>Comfort interviewing users and synthesising themes across many conversations</li>
+      </ul>`
+}];
+
+const dp = document.getElementById('dp'), first = dp.innerHTML;
+const modal = document.getElementById('modal');
+
+function bindExplain(){
+  dp.querySelectorAll('[data-explain]').forEach(b => b.onclick = () => {
+    const [t, body] = EXPLAIN[b.dataset.explain];
+    document.getElementById('mt').textContent = t;
+    document.getElementById('mb').textContent = body;
+    modal.classList.add('open');
+  });
+}
+document.getElementById('mc').onclick = () => modal.classList.remove('open');
+modal.onclick = e => { if (e.target === modal) modal.classList.remove('open'); };
+
+function render(i){
+  if (i === 0){ dp.innerHTML = first; dp.scrollTop = 0; bindExplain(); return; }
+  const j = jobs[i];
+  const blockers = j.blockers.length
+    ? `<ul class="blockers">${j.blockers.map(b => `<li><span>⚑</span><span><b>${b[0]}</b> — ${b[1]}</span></li>`).join('')}</ul>` : '';
+  const chip = j.contact
+    ? '<span class="contact-chip">✉ Named contact</span>'
+    : '<span class="contact-chip none">No named contact</span>';
+  const contactBox = j.contact
+    ? `<div class="contact-box">
+         <div><span class="k">Recruiter</span><span class="v">${j.contact.name}</span></div>
+         ${j.contact.email ? `<div><span class="k">Email</span><a href="#">${j.contact.email}</a></div>`
+                           : `<div><span class="k">Email</span><span class="v" style="color:var(--ink-var);font-style:italic">not in the posting</span></div>`}
+         <div><span class="k">LinkedIn</span><a href="#">${j.contact.li}</a></div>
+       </div>`
+    : `<p class="contact-empty">No named contact in this posting — this is a cold application.</p>`;
+
+  dp.innerHTML = `
+    <div class="id-row"><div class="logo">${j.ini}</div>
+      <div><div class="co">${j.co}</div><div class="src">via ${j.src}</div></div></div>
+    <h2>${j.t}</h2>
+    <p class="subline">${j.sub}</p>
+
+    <div class="tier1">
+      <div class="t1-top"><span class="t1-q">Should I apply?</span>
+        <span class="verdict lg ${j.vc}">${j.v}</span>${chip}</div>
+      <p class="t1-why">${j.why}</p>
+      ${blockers}
+    </div>
+
+    <div class="tier3">
+      <div class="actions">
+        <a class="btn primary" href="#">Apply on company site ↗</a>
+        <button class="btn" data-explain="shortlist">☆ Shortlist</button>
+        <button class="btn" data-explain="tailor">Tailor résumé</button>
+        <a class="btn" href="#">View posting</a>
+        <button class="btn icon" title="Tags look right">👍</button>
+        <button class="btn icon" title="Something's wrong">👎</button>
+      </div>
+      ${contactBox}
+    </div>
+
+    <div class="tier2">
+      <p class="t2-summary">${j.summary} <span class="prop">proposed</span></p>
+      <div class="chips">${j.chips}</div>
+      <p class="skills-head">Skills asked for <span class="prop">gap proposed</span></p>
+      <div class="skills">${j.skills}</div>
+    </div>
+
+    <div class="tier4">
+      <h3 class="sec">Full job description</h3>
+      <div class="jd">${j.jd}</div>
+      <p class="jd-src">Stored at ingest as <code>jd_clean</code>. Kept in full deliberately (D-37) — postings get taken down, and the link dies with them.</p>
+    </div>`;
+  dp.scrollTop = 0;
+  bindExplain();
+}
+
+document.querySelectorAll('.card').forEach(c => c.addEventListener('click', () => {
+  document.querySelectorAll('.card').forEach(x => x.classList.remove('selected'));
+  c.classList.add('selected'); c.classList.add('viewed');
+  render(Number(c.dataset.i));
+}));
+document.querySelectorAll('.fchip:not(.more)').forEach(c =>
+  c.addEventListener('click', () => c.classList.toggle('active')));
+bindExplain();
+</script>
