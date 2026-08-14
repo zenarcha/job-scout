@@ -3472,6 +3472,9 @@ Four small follow-ups from the same feedback thread, landed together.
   correctly. Salary chips: zero present on current data, expected — all 82 companies predate this
   session's confirmation-gating fix (D-142), so none have been through the new salary-snapshot path
   yet; will start appearing as new `classify` runs confirm companies going forward.
+- **AMENDED by D-165 (2026-08-14):** the "Hiring now" tag introduced here hardcoded its text colour
+  (`#004440`) against a themed background, making it unreadable in dark mode. D-165 replaces it with
+  `var(--secondary)`. The rest of this entry stands.
 
 ## D-145 — Fixed the two findings D-143's RLS check surfaced: 7 views set to `security_invoker`, one
 function's search_path pinned (2026-08-09)

@@ -3710,3 +3710,80 @@ as a technical learning in `learnings.md` — not fixed, out of this task's scop
 
 *Before starting next session: read the decision log and this summary entry fresh — don't trust a
 memory snapshot of what was decided.*
+
+## Session 39 — 2026-08-14, evening (the dashboard deployed to Vercel; the read path proven in production, the env-var plumbing still outstanding)
+
+### What happened this session
+
+**Two pre-deploy defects fixed.** The "Hiring now" tag — flagged by D-162 as a known defect and
+deliberately left alone — was fixed now that the page ships publicly: `.tag.hiring` paired a *themed*
+background with a *hardcoded* `#004440` foreground, which in dark mode is `#004440` on `#00504c`,
+roughly **1.1:1** contrast and effectively invisible across all 29 company cards. Replaced with
+`var(--secondary)`, the pairing `.tag.ind` and `.chip.ind` already use in the same stylesheet — not a
+new colour choice, but the tag finally following a convention the file already had. Measured in a real
+browser against live data: **5.5:1 dark, 5.7:1 light**, both clear WCAG AA. `dashboard-live.html` was
+regenerated in the same change because it *inlines* the stylesheet at build time; a CSS-only edit would
+have left the snapshot carrying the old colour, reintroducing exactly the drift D-162's single-stylesheet
+design exists to prevent. The regenerated diff is six lines — the rule, a timestamp, three day counts.
+Separately, README's "Live environment" section named the wrong Supabase project
+(`cdjgxrmeoqiogylveagr`) and claimed the schema still needed applying; now names the canonical
+`gwvrpdkiblozwdwoqsgd` and records `0001`–`0016` as applied. → **D-165**, amending D-144.
+
+**Sakshi deployed to Vercel; the site returned the missing-env-vars error.** `job-scout-gules.vercel.app`
+built and served, but rendered "Could not load from Supabase — Missing NEXT_PUBLIC_SUPABASE_URL /
+NEXT_PUBLIC_SUPABASE_ANON_KEY" *after* both variables had been set in Vercel's settings. Diagnosed from
+`lib/supabaseBrowser.ts:15-18`, whose own comment states it: those lookups are substituted **at build
+time**, so the values are compiled into the shipped bundle and never read at page-visit time. The live
+deployment was built from `31b0bd9`, before the variables existed — its bundle literally contained
+`undefined`, and the guard on line 23 correctly threw. **Adding variables afterwards cannot alter an
+already-compiled bundle; the fix is a rebuild, not a settings change.**
+
+**The diagnosis was confirmed, not assumed.** Rather than trust the reasoning, the served CSS was
+inspected for the *other* pending change — the contrast fix. It still computed to `rgb(0,68,64)`
+(`#004440`), proving the live site was an old build and that no rebuild had occurred. That one check
+distinguished "wrong settings" from "no rebuild yet" in a single step.
+
+**The database side was proven independently of Vercel.** The `anon` read path was exercised directly
+against live Supabase with the anon key, removing Vercel from the picture entirely: `v_jobs_public`
+returned **52 rows**, `remote_companies` **29 rows**, and both `jobs.recruiter_email` and
+`job_enrichments.raw_output` refused with `42501`. So D-161's fix works in production and the PII grants
+hold — **the only outstanding variable is Vercel's build-time env substitution.** This follows the
+D-161 lesson directly: exercise the thing, don't inspect the property.
+
+**Everything committed and pushed as `bda59ef`.** Per Sakshi's call, one commit carrying this session's
+fixes plus the previously-uncommitted golden-dataset work from the parallel sessions (D-163, D-164).
+
+**A parallel session took D-164 mid-flight, again.** D-164 appeared in `decisions.md` between reading
+the file and writing to it. Caught by re-grepping before numbering rather than trusting the earlier
+read — this session's entry became **D-165**. File mtimes were checked (last write ~1.5 hours prior)
+to confirm that session had finished before sweeping its work into the commit.
+
+### Decisions this session
+- **D-165** — AMENDS D-144: the "Hiring now" tag's hardcoded `#004440` replaced with
+  `var(--secondary)`. Rejected: a different hardcoded colour (one literal cannot serve two inverted
+  palettes — that *is* the bug), a dedicated `--hiring-t` token in all four `:root` blocks
+  (unnecessary indirection; `--secondary` already means "readable foreground for `--secondary-c`"),
+  and deferring again (D-162 already deferred it once; the page is now public).
+- Pointer added to **D-144** marking it amended.
+
+### Next steps
+1. **Confirm the deploy renders.** A rebuild from `bda59ef` was pushed; if the missing-vars error
+   persists after it lands, the cause is the **Production** scope checkbox on the two Vercel
+   variables (Vercel scopes Production / Preview / Development independently). Fix it and redeploy
+   **without** build cache — a cached build can reuse the old compiled bundle. Then verify: 5 jobs /
+   4 companies / 29 remote companies, `.tag.hiring` computing to `rgb(93,217,208)` on `rgb(0,80,76)`
+   in dark mode, and no `recruiter_email` / `hiring_manager` / `raw_output` in the Jobs tab payload.
+2. **D-164 has no session-summary entry.** The parallel session that fixed the Summary sheet's
+   off-by-one wrote to `decisions.md` and `learnings.md` but never to this file — that work has a
+   decision with no narrative. Capture it before the trail goes cold.
+3. **Consider stripping recruiter keys from `raw_output` before storing** rather than only defending
+   at the grant layer — carried from Session 35, still untouched, and now the data is behind a
+   public URL.
+4. **Pre-existing `npm audit` high on `undici`** via `cheerio`. Unfixed; not introduced by recent work.
+5. Still carried over, untouched: D-149's implementation, the stale comment at
+   `lib/discovery/apify.ts:65`, the 3 inconclusive "Remote OK" cases (Pocket FM, EOK Gems, Netomi),
+   D-71/D-149's golden eval harness (`tests/golden/fixtures.ts` + `run.ts`) still blocking D-153, and
+   Sakshi's sign-off on GC-006 / GC-012.
+
+*Before starting next session: read the decision log and this summary entry fresh — don't trust a
+memory snapshot of what was decided.*

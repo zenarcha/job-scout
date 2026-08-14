@@ -2459,3 +2459,38 @@ GC-007), and spot-checked `severity`/`expected_value` were untouched. While conf
 formula reads column P on purpose, found (but did not fix, out of scope) that the sheet's
 "Case-level detail" table is off by one column against its own headers — see D-163 and `learnings.md`
 for the full finding.
+
+## Get the Vercel deploy rendering live data (2026-08-14, evening)
+Originally written to `~/.claude/plans/i-have-added-still-memoized-crab.md`; approved and executed as
+Session 39.
+
+### Context
+`job-scout-gules.vercel.app` deployed but rendered "Could not load from Supabase — Missing
+NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY" even after both variables were added in
+Vercel's settings. Cause: `lib/supabaseBrowser.ts:15-18` reads them as literal
+`process.env.NEXT_PUBLIC_…` lookups, which Next.js substitutes **at build time**. The live deployment
+was built from `31b0bd9` before the variables existed, so its bundle contained `undefined` and the
+guard on line 23 threw. Adding variables afterwards cannot alter an already-compiled bundle — the fix
+is a new build, not a settings change.
+
+A second reason to rebuild: `31b0bd9` predates the "Hiring now" contrast fix, so the live site also
+shipped the dark-on-dark tag. One rebuild cures both, which is why this pushed a commit rather than
+using Vercel's Redeploy button.
+
+### Approach
+1. **Sakshi:** confirm both variables have **Production** ticked (Vercel scopes Production / Preview /
+   Development independently), no surrounding quotes, exact names.
+2. **Claude:** commit everything modified in one commit — the CSS contrast fix, the README fix, the
+   regenerated `dashboard-live.html`, and the previously-uncommitted golden-dataset docs (D-163,
+   D-164) — and push to `main`, which triggers a fresh production build.
+3. **Claude:** log the contrast fix as a decision entry (landed as D-165, amending D-144).
+
+### Verification
+Against the live Vercel URL once the new build is out: 5 jobs / 4 companies / 29 remote companies
+render with no error banner; `.tag.hiring` computes to `rgb(93,217,208)` on `rgb(0,80,76)` in dark
+mode; the Jobs tab payload carries no `recruiter_email` / `hiring_manager` / `raw_output`.
+
+Additionally — and independent of Vercel — the `anon` read path was exercised directly against live
+Supabase with the anon key: `v_jobs_public` 52 rows, `remote_companies` 29 rows, and both
+`jobs.recruiter_email` and `job_enrichments.raw_output` refused with `42501`. This isolated the
+remaining failure to Vercel's build-time env substitution alone.
