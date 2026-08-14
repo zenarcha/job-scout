@@ -4216,3 +4216,43 @@ no longer holds now that the page is deployed to a public URL, which is what pro
 - **Root cause worth naming:** the bug was a themed background with an unthemed foreground. That pairing
   is invisible in whichever theme the author happened to be looking at, and it is the shape to grep for
   if another one is suspected — a literal hex in a `color:` next to a `var(--…)` in a `background:`.
+
+## D-166 — The dashboard is deployed and verified live; the Session 39 diagnosis is corrected, and the true blocker is recorded as indeterminate (2026-08-14, evening)
+`job-scout-gules.vercel.app` now serves the D-110 dashboard against live Supabase. This entry exists
+because Session 39's docs were written *during* the diagnosis and committed (`ec9b18f`) asserting a
+root cause that later evidence disproved — the record needed correcting rather than quietly leaving a
+plausible-but-wrong explanation in the learning doc.
+- **Verified live, by exercising rather than inspecting:** the deployed bundle inlines the Supabase URL
+  and the `sb_publishable_…` anon key exactly once each; the page renders **5 jobs · 4 companies · 29
+  remote companies**, matching local exactly; `.tag.hiring` serves `color: var(--secondary)`, so D-165
+  shipped. A scan of ~814KB of deployed JavaScript found **zero** occurrences of `service_role`,
+  `sb_secret`, `GEMINI` or `CEREBRAS`. Separately, reading as `anon` with the anon key returned
+  `v_jobs_public` 52 rows and `remote_companies` 29 rows, while `jobs.recruiter_email` and
+  `job_enrichments.raw_output` were both refused with `42501` — D-161's fix holds in production.
+- **Three explanations were advanced and each was disproven.** (1) *"The build predated the variables;
+  rebuild."* Killed by a rebuild that ran with the variables present and still compiled `undefined`.
+  (2) *"Production scope isn't ticked."* Killed by looking — both were scoped "Production and Preview".
+  (3) *"The Sensitive flag withholds values from the build."* Unsupported — Vercel's docs describe
+  redacting sensitive values from build *logs*, which implies they do reach builds.
+- **What fixed it:** Sakshi re-entered the anon key value by hand and saved, together with clearing
+  Vercel's warning on that variable ("prefixed with `NEXT_PUBLIC_` and includes the term `key`… Mark as
+  Safe"). The following build inlined both values correctly.
+- **Decision: record the blocker as INDETERMINATE rather than name a fourth cause.** Two things changed
+  in one save — the stored value was overwritten *and* the safe-mark applied. A blank or mis-parsed
+  value (plausible: these were bulk-imported from a `.env` file) throws the identical "Missing" error
+  to a value withheld from the build, and because the variable is Sensitive the stored value cannot be
+  read back to distinguish them. **Options considered:** assert the empty-value theory (rejected — it
+  is the more likely of the two but nothing gathered actually separates them, and this session already
+  produced three confident wrong causes); assert the Mark-as-Safe theory (rejected for the same reason,
+  and it is the weaker of the two since that control is plausibly advisory); run a further experiment to
+  isolate it (available — blank the value deliberately and rebuild — but rejected as not worth a
+  deliberate outage on a now-working public page).
+- **Kept as the durable lesson (`learnings.md`, entry rewritten):** when a system hides a value by
+  design, inspection is not available as a diagnostic; only overwriting it yields information. Same
+  shape as D-161. Also kept: to test whether a rebuild has happened, check whether an *unrelated*
+  pending change is live yet — here a CSS colour fix in the same commit settled it in one step.
+- **`SUPABASE_SERVICE_ROLE_KEY` removed from the Vercel project.** It was never leaking — Next only
+  inlines `NEXT_PUBLIC_`-prefixed names, and the bundle scan above confirms its absence — but a static
+  site with no server layer can never use it, and it is the one credential that bypasses RLS entirely.
+  Removed on least-privilege grounds. `AI_PROVIDER`, `GEMINI_*` and `CEREBRAS_*` are also unused there;
+  left in place as harmless config.

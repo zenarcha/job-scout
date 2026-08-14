@@ -3743,6 +3743,15 @@ inspected for the *other* pending change — the contrast fix. It still computed
 (`#004440`), proving the live site was an old build and that no rebuild had occurred. That one check
 distinguished "wrong settings" from "no rebuild yet" in a single step.
 
+> **CORRECTED by D-166 (2026-08-14, later the same evening).** The diagnosis above — that the build
+> simply predated the variables and a rebuild would fix it — **was disproven.** A rebuild ran with
+> the variables present and still compiled both as `undefined`. Two further explanations (Production
+> scope not ticked; the Sensitive flag withholding values from the build) were also disproven. What
+> fixed it was re-entering the anon key value by hand while clearing Vercel's "Mark as Safe" warning,
+> in one save — and because those two changed together, **the true blocker is indeterminate**. See
+> D-166 and the rewritten `learnings.md` entry. The build-time-substitution concept itself is still
+> correct; only the causal story attached to it here was wrong.
+
 **The database side was proven independently of Vercel.** The `anon` read path was exercised directly
 against live Supabase with the anon key, removing Vercel from the picture entirely: `v_jobs_public`
 returned **52 rows**, `remote_companies` **29 rows**, and both `jobs.recruiter_email` and

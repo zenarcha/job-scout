@@ -1533,39 +1533,47 @@ isn't referenced by any Summary formula" and stopped there — which is literall
 stayed just as broken, but now invisibly disguised behind newly-written, more plausible-looking prose,
 making it harder for a future eval run to notice something was wrong.
 
-## Some settings are baked into a website when it is built, not read when someone visits it (2026-08-14)
+## When a value is hidden on purpose, you cannot diagnose it by looking — only by overwriting it (2026-08-14)
 
-The dashboard deployed to Vercel and immediately showed "Could not load from Supabase — Missing
-NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY", even though both values had just been
-entered into Vercel's Environment Variables screen. Nothing was wrong with the code, the settings, or
-the database. The values had simply been added *after* the site was built.
+The dashboard deployed to Vercel and showed "Could not load from Supabase — Missing
+NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY". It took three wrong explanations before it
+was fixed, and the wrong turns are the useful part.
 
-**What's actually going on.** There are two different moments in a website's life, and settings behave
-differently in each. There's **build time** — a one-off step where the source code is compiled into the
-finished files that get served — and **run time**, when a visitor's browser actually loads the page.
-Settings read at run time can be changed and take effect immediately. Settings read at *build* time get
-substituted into the finished files permanently, like printing a phone number onto a poster. Changing
-the number in your address book afterwards does nothing to posters already printed. You have to print
-new ones.
+**The background concept, which is true and worth knowing.** There are two moments in a website's
+life: **build time**, a one-off step where source code is compiled into the finished files, and **run
+time**, when a visitor's browser loads the page. Settings named `NEXT_PUBLIC_…` are read at *build*
+time and written permanently into the finished JavaScript — like printing a phone number onto a
+poster. Changing the number in your address book later does nothing to posters already printed.
 
-Next.js treats any setting whose name starts with `NEXT_PUBLIC_` as build-time. It has to: the browser
-has no access to the server's settings, so the only way the browser can know the value is if it was
-written into the JavaScript file itself during the build. `lib/supabaseBrowser.ts` even says so in a
-comment on line 15 — the lookups are written as literal `process.env.NEXT_PUBLIC_…` expressions
-specifically because that exact spelling is the form the compiler recognises and replaces.
+**The three explanations, and what killed each one.**
+1. *"The values were added after the site was built, so just rebuild."* Reasonable, and it fits the
+   concept above. **Disproven:** a rebuild ran with the variables already saved and still produced a
+   bundle containing `undefined`.
+2. *"The variables aren't ticked for the Production environment."* **Disproven** by looking: both were
+   scoped "Production and Preview".
+3. *"Vercel's Sensitive flag withholds values from the build."* **Not supported:** Vercel's own docs
+   describe redacting sensitive values *from build logs*, which implies they do reach builds.
 
-So the deployed site's JavaScript literally contained `undefined` where the database address should
-have been, and the safety check on line 23 correctly reported it. **The fix was to run a new build, not
-to change a setting.**
+**What actually fixed it.** Re-entering the anon key value by hand and saving — at the same time as
+clearing a Vercel warning on that variable ("this key is prefixed with `NEXT_PUBLIC_` and includes the
+term `key`… Mark as Safe"). The next build inlined both values correctly.
 
-**What would have happened otherwise.** The tempting move is to keep re-checking and re-saving the
-values in Vercel's settings screen, because that's where the error message points. That could be
-repeated indefinitely without ever fixing anything, since no amount of correcting a setting changes an
-already-compiled file. The distinguishing test that settled it in one step: check whether the *other*
-change in the pending commit — a CSS colour fix — had reached the live site. It hadn't, which proved
-the live site was still an old build and no rebuild had happened yet.
+**Be honest about what that proves: not much about which one mattered.** Two things changed in a
+single save. The stored value was overwritten *and* the safe-mark was applied. A blank or mis-parsed
+value — plausible, since these were bulk-imported from a `.env` file — throws the exact same "Missing"
+error as a value that never reaches the build. Nothing gathered so far separates the two.
 
-**The general lesson.** When a deployed app can't see a setting you're certain you set, ask *when* that
-setting is read before touching it again. If it's read at build time, the question isn't "is the value
-right" but "has anything been rebuilt since I set it" — and the cheapest way to answer that is to look
-for some *other*, unrelated recent change and see whether it's live yet.
+**The lesson that did hold up.** The variable was marked **Sensitive**, which makes Vercel refuse to
+show the value back to anyone — "Copy to Clipboard" is greyed out with a padlock. So *no amount of
+looking at the settings screen could distinguish "correct value" from "empty value".* When a system
+deliberately hides a value from you, inspection is not available as a diagnostic at all; the only move
+that yields information is to overwrite it with a known-good value and see what changes. This is the
+same shape as the earlier `v_jobs_public` lesson — checking a privilege *listing* proved which columns
+were absent while the surface returned zero rows for a week. Exercise the thing; don't inspect the
+property.
+
+**The one diagnostic trick worth reusing.** To answer "has a rebuild actually happened since I changed
+that setting?", look for some *unrelated* recent change and check whether it is live yet. Here, a CSS
+colour fix was sitting in the same pending commit. Fetching the deployed stylesheet and seeing the old
+colour proved in one step that no rebuild had occurred — no build logs, no timestamps, no guessing.
+Later, seeing the *new* colour alongside a still-broken page was what killed explanation 1.

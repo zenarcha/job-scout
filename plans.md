@@ -2464,6 +2464,12 @@ for the full finding.
 Originally written to `~/.claude/plans/i-have-added-still-memoized-crab.md`; approved and executed as
 Session 39.
 
+> **CORRECTED by D-166.** This plan's Context section states the cause as "the deployment was built
+> before the variables existed". That was **disproven** — the rebuild this plan triggered ran with the
+> variables present and still compiled them as `undefined`. The plan's steps 2 and 3 completed as
+> written and its verification section stands; only its diagnosis was wrong. The real fix, and why the
+> underlying blocker is recorded as indeterminate, are in D-166.
+
 ### Context
 `job-scout-gules.vercel.app` deployed but rendered "Could not load from Supabase — Missing
 NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY" even after both variables were added in
