@@ -4089,3 +4089,127 @@ porting `dashboard-live.html` behaviour rather than redesigning from it (D-156).
 - **Known cosmetic defect, NOT fixed, needs a call:** the "Hiring now" tag is `#004440` text on
   `--secondary-c`, which is `#00504c` in dark mode — dark-on-dark and effectively unreadable. It is
   inherited from D-144's styling, predates this session, and now ships on a public page.
+
+## D-163 — `why_this_test_exists` column in `golden-dataset-template.xlsx` rewritten in plain language for all 15 rows; GC-005's stale cross-reference fixed to GC-014 (2026-08-14, night)
+Sakshi found the column's existing prose (dense, jargon-heavy, written for someone already fluent in
+the project's internals) hard to read, and asked for every row rewritten in plain language — without
+losing any of the specific detail (decision IDs, session numbers, company/field specifics, named
+mechanisms like `reasoning_after_verdict` or `geoRecheckPrompt`). Scope broadened mid-task after a
+genuine data bug surfaced while drafting the rewrite.
+- **Decision: rewrote column P (`why_this_test_exists`), rows 2–16 (GC-001–GC-015), in plain
+  conversational language, one-for-one detail-preserving.** No other column touched — `severity`,
+  `expected_value`, `grading_rationale`, tag columns, and all `Summary`/`Legend`/`Failure Categories`
+  sheets left byte-identical.
+- **Bug found and fixed: GC-005's note cited GC-007 as its "geo_explicit=false, silent posting"
+  contrast case.** GC-007 is actually a `technical_depth` row (expected_value=4) — the real contrast
+  case (geo_explicit=FALSE, silent posting) is GC-014. This was a leftover reference from before the
+  Session 34/36 case-ID reshuffling; the prose was never updated to match. **Options considered:**
+  leave the reference as GC-007 and just simplify the language around it (rejected by Sakshi — would
+  have propagated a factual error in friendlier words); drop the cross-reference entirely rather than
+  guess (available but not chosen); fix it to GC-014 (chosen — confirmed by Sakshi directly, and
+  GC-014 is unambiguously the correct row by both `field_under_test` and `expected_value`).
+- **Scope was widened by Sakshi mid-task**, from "reword this one column" to "check all fields in the
+  sheet for accuracy," after the GC-005/GC-007 bug surfaced. Performed a full audit: cross-checked
+  every row's `severity` tag against how `remote_type`/`is_ai`/`technical_depth`/`is_technical`
+  actually drive (or don't drive) `lib/enrich/recommend.ts`'s priority logic and
+  `lib/enrich/geoRecheck.ts`'s fail-open trigger, and verified every cited decision ID (D-121, D-129,
+  D-130, D-146/147, D-149, D-133/136, D-75, D-63, D-62, D-64, D-73, D-53, D-54, D-50, D-74, D-94)
+  actually exists in this log.
+  - **Result: severity tags check out.** `technical_depth`'s false-positive/false-negative split
+    between GC-007 (severity=false-positive) and GC-012 (severity=false-negative) correctly tracks the
+    `>= 4` downgrade threshold in `recommend.ts` — GC-007 tests the risk of the AI *under*-scoring a
+    genuinely deep-technical job (missed downgrade → shown as noise), GC-012 tests the risk of the AI
+    *over*-scoring an approachable one (wrongly downgraded → buried, a lost opportunity). `remote_type`
+    and `is_ai` are uniformly tagged false-negative because every existing row's `expected_value` is on
+    the "should be visible" side — there is currently no row testing the opposite direction (AI wrongly
+    keeps a non-eligible job visible), which is a coverage gap, not a data error.
+  - **Soft finding, not changed:** GC-011's `is_technical` severity (false-positive) is a plausible
+    convention call but isn't grounded in an actual pipeline consequence the way the other fields are —
+    D-63 deliberately removed `is_technical` from `recommend.ts`'s scoring entirely (Sakshi is
+    non-technical; "technical = good" was an inherited, never-decided assumption). Left as-is; noted
+    here rather than silently changed.
+- **Bug found, NOT fixed — flagged for its own decision:** while verifying that no `Summary` sheet
+  formula reads column P (this task's stated non-goal), found that the sheet's "Case-level detail"
+  table (rows 41+, columns D–G) is off by one column against its own headers — e.g. `D41`'s header says
+  "output (baseline_v4_prompt-2026-08-13)" but the formula reads `'Golden Dataset'!P2`
+  (`why_this_test_exists`), not `Q2` (the actual `actual_output-baseline_v4_prompt-2026-08-13` column).
+  Every column in that table is shifted the same way. This predates this session (built under D-152,
+  restructured under D-159) and was invisible while column P held short text; now that P holds full
+  paragraphs, a real eval run would visibly show prose under "output" instead of the model's actual
+  answer. Out of scope for this task — not touched, needs its own fix. **Now fixed — see D-164.**
+
+## D-164 — CLOSES D-163's flag: the `Summary` sheet's "Case-level detail" table read one column too far left in all 400 cells; formulas shifted to match their headers (2026-08-14, night)
+D-163 found, but deliberately did not fix, an off-by-one column bug in the `Summary` sheet of
+`samples/golden-dataset/golden-dataset-template.xlsx`. The "Case-level detail — expected vs. actual"
+table (rows 41–140) exists to show, per test case, what the AI actually answered and whether that
+answer passed. Its four right-hand columns were each reading one column too far left in the
+`Golden Dataset` sheet: the column headed "output" pulled `P` (`why_this_test_exists`) instead of `Q`
+(`actual_output-baseline…`), "pass/fail" pulled `Q` instead of `R`, and so on through `S`/`T`.
+- **Decision: shifted the formulas, not the headers — `D`→`Q`, `E`→`R`, `F`→`S`, `G`→`T`, across all
+  400 cells in `D41:G140`.** The existing self-guarding idiom
+  (`=IF('Golden Dataset'!<col><row>="","",'Golden Dataset'!<col><row>)`) was preserved; the column
+  reference appears twice per cell and both instances moved together. Columns `A`/`B`/`C` guard on `A`
+  (`case_id`) rather than on themselves, are correct, and were not touched.
+- **Two independent signals established that the formulas — not the headers — were the wrong side, so
+  there was no judgement call about which to change.** (1) The sheet's own conditional formatting
+  already assumed the corrected layout: `D41:D140`/`E41:E140` turn red on `E41="FAIL"` and
+  `F41:F140`/`G41:G140` on `G41="FAIL"`, i.e. it expects `E` and `G` to hold PASS/FAIL. Before the fix
+  `E` held the model's free-text answer, so that highlighting could never fire under any input — dead
+  formatting that only makes sense against the fixed layout. (2) All 22 aggregate formulas above the
+  table (pass rate, false-negative/false-positive rates, per-field, per-input-pattern, per-root-cause)
+  already used `R` and `T` correctly for pass/fail. The bug was isolated to this one table.
+  **Consequence: the conditional formatting needed no change and got none** — the fix is what makes it
+  start working.
+- **Alternatives considered:** relabel the headers to match the formulas (rejected — the headers agree
+  with the conditional formatting and with every other formula in the sheet, so the formulas were the
+  minority view); rewrite the table to guard on `case_id` like `A`/`B`/`C` do (rejected as unrequested
+  scope — the self-guard is an existing, working idiom and changing it would have widened a bug fix
+  into a refactor).
+- **Verified by exercising the table, not by inspecting it** — deliberately, per the D-161 lesson that
+  checking a *property* is not the same as reading the *result*. Confirming the formulas now *say*
+  `Q/R/S/T` would not prove the table renders correctly. So: a throwaway copy was filled with dummy
+  eval results for GC-001–GC-003, recalculated headlessly in LibreOffice, and the resulting values
+  read back — "output" showed the dummy answer and "pass/fail" showed `PASS`/`FAIL`, with two rows
+  satisfying the `="FAIL"` highlight condition that was previously unsatisfiable. A **control copy
+  carrying the old formulas was recalculated alongside it** and showed the bug in action (a paragraph
+  of `why_this_test_exists` prose sitting under "output"), which is what proves the test actually
+  discriminates rather than passing either way. Both copies were deleted; the committed file's
+  `Q:T` columns remain empty across all 15 case rows.
+- **Also asserted: nothing else in the workbook moved.** A full cell-level snapshot taken before the
+  edit was diffed against the saved file — 0 differences outside the 400 target cells, across all four
+  sheets, with conditional formatting rules and column widths unchanged on every sheet.
+- **Related bug found while auditing, NOT fixed:** the detail table covers `Golden Dataset` rows 2–101
+  (100 rows), while every aggregate formula above it reads rows 2–500. Cases beyond the 100th would be
+  counted in the summary statistics but would silently never appear in the case-level table. Real, but
+  a different bug from D-163's; flagged rather than folded into this fix. The set currently holds 15
+  cases, so it is not yet biting.
+
+## D-165 — AMENDS D-144: the "Hiring now" tag's hardcoded text colour replaced with `var(--secondary)`, fixing an unreadable dark-on-dark tag (2026-08-14, evening)
+D-144 introduced the Remote Companies tab's "Hiring now" tag; D-162 flagged its colour as a known
+cosmetic defect and deliberately left it alone rather than restyle a decided element. That reasoning
+no longer holds now that the page is deployed to a public URL, which is what prompted the fix.
+- **The defect.** `.tag.hiring` was `background:var(--secondary-c); color:#004440` — a themed
+  background paired with a *hardcoded* foreground. In light mode `--secondary-c` is `#d8f6f2` and the
+  pairing is fine. In dark mode it flips to `#00504c`, and `#004440` on `#00504c` is two near-identical
+  dark teals: a measured contrast ratio of roughly **1.1:1**, i.e. effectively invisible. All 29 tags
+  were affected, on every company card.
+- **Decision: `color:#004440` → `color:var(--secondary)`** in `styles/dashboard.css`. This is not a new
+  colour choice — `.tag.ind` and `.chip.ind`, in the same stylesheet, already pair `var(--secondary)`
+  text with a `var(--secondary-c)` background. The tag was the one element that broke a convention the
+  file already had; the fix makes it follow it. Measured in a real browser against live data:
+  **5.5:1 in dark** (`#5dd9d0` on `#00504c`) and **5.7:1 in light** (`#006a65` on `#d8f6f2`) — both
+  clear WCAG AA for normal text.
+- **Options considered.** Pick a new hardcoded colour with enough contrast against both themes
+  (rejected — a single literal cannot serve two inverted palettes, which is the exact bug being
+  fixed); add a dedicated `--hiring-t` token to all four `:root` blocks (rejected as unnecessary
+  indirection: `--secondary` already carries precisely the meaning "readable foreground for
+  `--secondary-c`", and a fifth token would be one more thing to keep in sync); leave it and log it
+  again (rejected — D-162 already deferred it once, and the page is now public).
+- **`dashboard-live.html` regenerated in the same change.** The snapshot *inlines* the stylesheet at
+  build time, so a CSS-only edit would have left the committed snapshot carrying the old broken colour
+  — reintroducing exactly the drift D-162's single-stylesheet design exists to prevent. The regenerated
+  diff is six lines: this rule, the generation timestamp, and three day-count increments. No structural
+  change, which is the evidence the regeneration changed nothing else.
+- **Root cause worth naming:** the bug was a themed background with an unthemed foreground. That pairing
+  is invisible in whichever theme the author happened to be looking at, and it is the shape to grep for
+  if another one is suspected — a literal hex in a `color:` next to a `var(--…)` in a `background:`.

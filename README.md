@@ -80,9 +80,12 @@ Deploying: import the repo at vercel.com and set the two `NEXT_PUBLIC_*` vars in
 - ⬜ Phase 9 — semantic search (deferred)
 
 ## Live environment
-- Supabase project **`job-tracker`** (`cdjgxrmeoqiogylveagr`, project swapped 2026-08-02, see
-  `decisions.md` D-36) — schema needs re-applying on the new project (`0001` + additive lane-ready
-  `0002`), watchlist re-seeded. `.env` URL updated; anon key + the two TODO secrets still needed.
+- Supabase project **`gwvrpdkiblozwdwoqsgd`** (D-96) — this is the canonical project and the one
+  `.env.local` points at. Earlier docs naming `cdjgxrmeoqiogylveagr` (D-36) or
+  `xxfeagpjaxudhbihjruq` (D-88) are stale; the latter is permanently unreachable.
+- Schema is applied and current: migrations `0001` through `0016`, all in `supabase/migrations/`.
+  RLS is on (`0009`, `0014`); the public read surface is `v_jobs_public` (`0015` + `0016`, D-157
+  as amended by D-161).
 
 ## Direction
 This tracker is the foundation of a larger **AI Job Application OS** (evolve, don't rewrite). The

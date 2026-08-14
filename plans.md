@@ -2431,3 +2431,31 @@ Original path (may be cleared later): `~/.claude/plans/shiny-hatching-pond.md`. 
 `get_advisors` clean of new findings; `npm run build` exits 0; `npm run dev` + Browser tool check
 that the Jobs tab's network payload carries no recruiter fields and the Remote Companies tab shows
 the PII banner.
+
+## Rewrite `why_this_test_exists` column in plain language (2026-08-14, night)
+Originally written to `~/.claude/plans/severity-why-is-it-jazzy-manatee.md`; approved and executed as
+D-163.
+
+### Context
+Sakshi found the current `why_this_test_exists` values in `samples/golden-dataset/golden-dataset-template.xlsx`
+(Golden Dataset sheet, column P) too dense/jargon-heavy to read easily. She wanted every row's value
+rewritten in plain, easy language while keeping every specific detail (decision IDs, session numbers,
+company/field specifics, mechanisms) — nothing dropped, just phrased simply.
+
+While drafting the rewrite, a full audit of the sheet surfaced one real data bug: GC-005's note cited
+GC-007 as its "geo_explicit=false, silent posting" contrast case — GC-007 is actually a `technical_depth`
+row; the real contrast case is GC-014 (`geo_explicit = FALSE`). Sakshi confirmed: fix the reference to
+GC-014 while simplifying the language.
+
+### Approach
+Overwrite cells P2:P16 (rows for GC-001 through GC-015) in the `Golden Dataset` sheet of
+`samples/golden-dataset/golden-dataset-template.xlsx` with plain-language text via openpyxl
+(`ws.cell(row, column=16).value = "..."`), then save. No other cells/columns touched — `Summary`,
+`Legend`, `Failure Categories` sheets and all formulas left as-is.
+
+### Verification
+Reopened the xlsx after saving; confirmed all 15 rows landed, GC-005 now references GC-014 (not
+GC-007), and spot-checked `severity`/`expected_value` were untouched. While confirming no `Summary`
+formula reads column P on purpose, found (but did not fix, out of scope) that the sheet's
+"Case-level detail" table is off by one column against its own headers — see D-163 and `learnings.md`
+for the full finding.

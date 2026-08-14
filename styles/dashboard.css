@@ -220,5 +220,5 @@
   .co-contact { font-size:12.5px; margin-top:6px; display:flex; gap:8px; flex-wrap:wrap; color:var(--ink-var); }
   .co-contact.soft { font-style:italic; color:#adb5bd; }
   .co-tags { display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
-  .tag.hiring { background:var(--secondary-c); color:#004440; border-color:transparent; }
+  .tag.hiring { background:var(--secondary-c); color:var(--secondary); border-color:transparent; }
   .co-salary { margin-top:6px; }

@@ -1490,3 +1490,45 @@ one-off HTML snapshot was regenerated and compared against the committed one. Th
 were timestamps, day counts and a rename that had already happened elsewhere — no structural change
 at all. That comparison is the evidence the move didn't quietly alter anything; without it, "I only
 refactored it" would just be a claim.
+
+## A spreadsheet's column headers can lie about what a formula actually reads — and the mismatch can stay invisible for a long time (2026-08-14)
+
+While rewriting the `why_this_test_exists` column in `golden-dataset-template.xlsx` in plain language
+(D-163), a check of whether the sheet's `Summary` tab reads that column turned up a real, pre-existing
+bug: the "Case-level detail" table's columns are shifted one column to the left of what their own
+headers claim. The header on one column reads "output (baseline_v4_prompt-2026-08-13)" — but the
+formula underneath it actually pulls from the `why_this_test_exists` column, not the column that
+actually holds the model's output. Every column after it in that row is off by the same one-column
+shift.
+
+**Why this stayed hidden.** A spreadsheet formula like `='Golden Dataset'!P2` doesn't know or care what
+its own column header says — it just returns whatever is sitting in cell P2, no matter what that cell
+happens to contain. As long as column P held short, mostly-blank-looking text, a formula quietly
+pulling from the wrong column produced output that still looked roughly plausible, so nobody noticed
+the header and the formula disagreed. The bug wasn't introduced by this session's edit — it was already
+there — but rewriting column P into full paragraphs is what would have made it obvious the next time
+someone actually ran the eval and looked at the "output" column, because a paragraph of "why this test
+exists" prose would show up where a one-word model verdict was expected.
+
+**The general lesson.** A column header is a label a human wrote once; a formula's actual cell
+reference is what the computer really does. The two can drift apart silently, especially after any
+column-reordering pass (this sheet had one, in D-159), and the drift is easiest to catch by reading
+the formula's real reference against the data, not by trusting that a header and the cell beneath it
+still agree. Checking "does any formula reference the column I'm about to change" is not the same
+question as "does every formula that claims to reference a column actually match its own label" — the
+first check (done here) can pass clean while the second (not done here, since it wasn't this task's
+job) would have caught the bug earlier.
+
+**Follow-up (fixed under D-164).** When the fix was made, the sheet turned out to contain its own
+proof of which side was wrong. The conditional formatting on those columns already turned a row red on
+`E41="FAIL"` — meaning it expected column `E` to hold PASS/FAIL, which under the buggy formulas it
+never did. That highlighting had therefore been dead the whole time: no possible input could trigger
+it. A rule that can never fire is itself evidence something upstream of it moved. Worth checking for
+directly, because it is a signal that survives silently for as long as the feature goes unused, and it
+points at the mistake without needing any data in the sheet at all.
+
+**What would have happened without checking.** If the verification step had only confirmed "column P
+isn't referenced by any Summary formula" and stopped there — which is literally true, nothing reads
+`why_this_test_exists` on purpose — the mismatched formula in the adjacent output column would have
+stayed just as broken, but now invisibly disguised behind newly-written, more plausible-looking prose,
+making it harder for a future eval run to notice something was wrong.

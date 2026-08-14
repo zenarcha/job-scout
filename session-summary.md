@@ -3655,3 +3655,58 @@ correct and a follow-up commit records the discrepancy.
 
 *Before starting next session: read the decision log and this summary entry fresh — don't trust a
 memory snapshot of what was decided.*
+
+## Session 38 — 2026-08-14, night (`why_this_test_exists` rewritten in plain language; a stale cross-reference and a real Summary-sheet formula bug both found)
+
+### What happened this session
+
+**Started as a plain-language question, then became a real edit.** Sakshi first asked why the
+golden-dataset's `severity` column exists and what false-negative/false-positive mean there — answered
+in plain language with real examples from the sheet (GC-002/GC-011). She then asked for the actual
+`why_this_test_exists` column values themselves to be rewritten in plain language, keeping every
+specific detail (decision IDs, session numbers, company/field specifics, named mechanisms).
+
+**A real data bug surfaced mid-rewrite — D-163.** GC-005's note cited GC-007 as its
+"geo_explicit=false, silent posting" contrast case; GC-007 is actually a `technical_depth` row. The
+real contrast case is GC-014. Flagged via `AskUserQuestion` rather than silently fixed or silently
+carried forward. Sakshi's answer widened the task to "check all fields in the sheet for accuracy" — a
+full audit followed: every row's `severity` tag cross-checked against how `remote_type`/`is_ai`/
+`technical_depth`/`is_technical` actually drive (or, for `is_technical`, deliberately don't drive per
+D-63) `lib/enrich/recommend.ts`'s priority logic and `lib/enrich/geoRecheck.ts`'s fail-open trigger,
+plus every cited decision ID checked against this log. Severity tags held up; `is_technical`'s tag was
+flagged as weakly grounded (not wrong, just not tied to an actual code consequence) but left unchanged.
+
+**All 15 rows (GC-001–GC-015) rewritten**, GC-005's reference corrected to GC-014, no other column
+touched (`severity`, `expected_value`, `grading_rationale`, tag columns, and all other sheets left
+byte-identical) — **D-163**.
+
+**A second, unrelated real bug found while verifying, not fixed.** Confirming no `Summary` sheet
+formula reads column P on purpose turned up that the "Case-level detail" table (rows 41+) is off by
+one column against its own headers — e.g. the column headed "output (baseline_v4_prompt-2026-08-13)"
+actually reads `'Golden Dataset'!P2` (`why_this_test_exists`), not `Q2` (the real
+`actual_output-baseline...` column). Predates this session (built under D-152, restructured under
+D-159); was invisible while column P held short text, now more likely to be noticed once a real eval
+run fills in actual outputs and the "output" column visibly shows prose instead. Logged in D-163 and
+as a technical learning in `learnings.md` — not fixed, out of this task's scope.
+
+### Decisions/amendments made
+- **D-163** — `why_this_test_exists` rewritten in plain language for all 15 rows; GC-005→GC-014
+  reference fixed; full severity/citation audit performed and found sound (one soft finding on
+  `is_technical`, not changed); Summary sheet's case-detail table off-by-one bug found and flagged, not
+  fixed.
+
+### Next steps
+1. **Fix the Summary sheet's case-detail table off-by-one column bug** (D-163) — columns D–G in the
+   "Case-level detail" table (rows 41+) need to shift one column right to actually match their own
+   headers (`Q`/`R`/`S`/`T` instead of `P`/`Q`/`R`/`S`).
+2. Get Sakshi's explicit sign-off on GC-006 (`is_ai` borderline) and GC-012 (`technical_depth`
+   borderline) — still open from Session 36.
+3. D-71/D-149's golden eval harness (`tests/golden/fixtures.ts` + `run.ts`) still doesn't exist — the
+   golden set still can't actually run. Carried over from Sessions 33–37.
+4. Consider whether `is_technical`'s severity convention (flagged this session, not changed) should be
+   revisited now that it's known the field carries no scoring weight per D-63.
+5. Still carried over, untouched: D-149's actual implementation, the stale comment at
+   `lib/discovery/apify.ts:65`, the 3 inconclusive "Remote OK" cases (Pocket FM, EOK Gems, Netomi).
+
+*Before starting next session: read the decision log and this summary entry fresh — don't trust a
+memory snapshot of what was decided.*
