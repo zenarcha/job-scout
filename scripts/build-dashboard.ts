@@ -302,20 +302,13 @@ async function main() {
   <button class="navitem" data-tab="companies"><span class="navicon" aria-hidden="true">🏢</span>Remote companies<span class="navcount">${companies.length}</span></button>
 </nav>
 <div class="view" id="view-jobs">
-  <div class="banner">
-    <strong>Live data</strong> — generated ${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC from Supabase.
-    Yes ${counts.high ?? 0} · Maybe ${counts.med ?? 0} · Probably not ${counts.low ?? 0} · <b>Pending ${counts.unknown ?? 0}</b>.
-    <b>${onsite} are on-site</b> (<code>remote_type=not_remote</code>) and hidden by default — nothing downstream currently acts on that field.
-  </div>
   <div class="filterbar">
     <div class="fgroup"><span class="flabel">Should I apply?</span>
       <button class="fchip active" data-f="verdict" data-v="high">Yes</button>
       <button class="fchip active" data-f="verdict" data-v="med">Maybe</button>
-      <button class="fchip active" data-f="verdict" data-v="low">Probably not</button>
-      <button class="fchip active" data-f="verdict" data-v="unknown">Pending</button></div>
+      <button class="fchip active" data-f="verdict" data-v="low">Probably not</button></div>
     <div class="fgroup"><span class="flabel">Location</span>
       <button class="fchip active" data-f="remote" data-v="remote">Remote</button>
-      <button class="fchip active" data-f="remote" data-v="unknown">Not checked</button>
       <button class="fchip" data-f="remote" data-v="onsite">On-site (${onsite})</button></div>
     <div class="fgroup"><span class="flabel">Experience</span>
       <button class="fchip active" data-f="exp" data-v="fit">Right for me (${expCount('fit')})</button>
@@ -326,7 +319,7 @@ async function main() {
     <div class="fgroup"><span class="flabel">Technical</span>
       <button class="fchip" data-f="tech" data-v="1">Hide deep-technical</button></div>
     <div class="fgroup" style="border:none"><span class="flabel">IIT/IIM</span>
-      <button class="fchip" data-f="iit" data-v="1">Hide those</button></div>
+      <button class="fchip" data-f="iit" data-v="1">Hide</button></div>
     ${domains.length ? `<div class="fgroup" style="border:none;flex-wrap:wrap"><span class="flabel">Industry</span>
       ${domains.map((d) => `<button class="fchip active" data-f="domain" data-v="${esc(d)}">${esc(d)}</button>`).join('')}</div>` : ''}
     <span class="fcount" id="fcount"></span>
@@ -387,7 +380,10 @@ document.addEventListener('keydown', function (e) { if (e.key === 'Escape') clos
 // Each group is a set of ALLOWED values; a chip toggles its value in or out.
 // "Hide IIT/IIM" is the one inverted control — it excludes rather than includes,
 // which is why it starts inactive and reads as an action rather than a category.
-var allow = { verdict: {}, remote: {}, exp: {}, domain: {} };
+// verdict/remote "unknown" have no chip of their own (the Pending/Not checked chips were
+// removed), but jobs in those buckets must still show by default, so seed them here
+// rather than deriving allow purely from rendered chips.
+var allow = { verdict: { unknown: true }, remote: { unknown: true }, exp: {}, domain: {} };
 var EXCLUSIVE = { iit: false, ai: false, tech: false };
 document.querySelectorAll('.fchip[data-f]').forEach(function (b) {
   var f = b.dataset.f;

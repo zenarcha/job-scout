@@ -29,7 +29,6 @@ function toggle<T>(set: Set<T>, value: T): Set<T> {
 export default function Dashboard() {
   const [jobs, setJobs] = useState<JobRow[] | null>(null);
   const [companies, setCompanies] = useState<CompanyRow[] | null>(null);
-  const [loadedAt, setLoadedAt] = useState<Date | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const [tab, setTab] = useState<'jobs' | 'companies'>('jobs');
@@ -62,7 +61,6 @@ export default function Dashboard() {
         if (cancelled) return;
         setJobs(jobs);
         setCompanies(companies);
-        setLoadedAt(new Date());
       })
       .catch((e: unknown) => {
         if (!cancelled) setError(e instanceof Error ? e.message : String(e));
@@ -104,12 +102,6 @@ export default function Dashboard() {
     }
     return map;
   }, [jobs]);
-
-  const counts = useMemo(() => {
-    const c: Record<string, number> = {};
-    for (const j of jobsForDisplay) c[verdictKey(j.priority)] = (c[verdictKey(j.priority)] ?? 0) + 1;
-    return c;
-  }, [jobsForDisplay]);
 
   const onsiteCount = useMemo(
     () => jobsForDisplay.filter((j) => j.remote_type === 'not_remote').length,
@@ -259,14 +251,6 @@ export default function Dashboard() {
       </nav>
 
       <div className={tab === 'jobs' ? 'view' : 'view hidden'}>
-        <div className="banner">
-          <strong>Live data</strong> — read from Supabase in your browser
-          {loadedAt ? ` at ${loadedAt.toISOString().slice(0, 16).replace('T', ' ')} UTC` : ''}. Yes{' '}
-          {counts.high ?? 0} · Maybe {counts.med ?? 0} · Probably not {counts.low ?? 0} ·{' '}
-          <b>Pending {counts.unknown ?? 0}</b>. <b>{onsiteCount} are on-site</b> (<code>remote_type=not_remote</code>)
-          and hidden by default — nothing downstream currently acts on that field.
-        </div>
-
         <div className="filterbar">
           <div className="fgroup">
             <span className="flabel">Should I apply?</span>
@@ -275,7 +259,6 @@ export default function Dashboard() {
                 ['high', 'Yes'],
                 ['med', 'Maybe'],
                 ['low', 'Probably not'],
-                ['unknown', 'Pending'],
               ] as const
             ).map(([v, label]) => (
               <FilterChip key={v} active={verdictAllow.has(v)} onClick={() => setVerdictAllow((s) => toggle(s, v))}>
@@ -288,9 +271,6 @@ export default function Dashboard() {
             <span className="flabel">Location</span>
             <FilterChip active={remoteAllow.has('remote')} onClick={() => setRemoteAllow((s) => toggle(s, 'remote'))}>
               Remote
-            </FilterChip>
-            <FilterChip active={remoteAllow.has('unknown')} onClick={() => setRemoteAllow((s) => toggle(s, 'unknown'))}>
-              Not checked
             </FilterChip>
             <FilterChip active={remoteAllow.has('onsite')} onClick={() => setRemoteAllow((s) => toggle(s, 'onsite'))}>
               On-site ({onsiteCount})
@@ -327,7 +307,7 @@ export default function Dashboard() {
           <div className="fgroup" style={{ border: 'none' }}>
             <span className="flabel">IIT/IIM</span>
             <FilterChip active={hideIit} onClick={() => setHideIit((v) => !v)}>
-              Hide those
+              Hide
             </FilterChip>
           </div>
 
