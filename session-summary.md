@@ -3796,3 +3796,81 @@ to confirm that session had finished before sweeping its work into the commit.
 
 *Before starting next session: read the decision log and this summary entry fresh — don't trust a
 memory snapshot of what was decided.*
+
+---
+
+## Session 40 — 2026-08-14, 20:16 IST (D-163's off-by-one bug fixed and proven live; a bigger, unresolved problem found in the `severity` column)
+
+### What happened this session
+
+**The Summary-sheet off-by-one bug is fixed — D-164.** Session 38 found but deliberately didn't fix an
+off-by-one in `samples/golden-dataset/golden-dataset-template.xlsx`. The "Case-level detail" table's
+four right-hand columns each read one column too far left, so the column headed "output" pulled
+`why_this_test_exists` and "pass/fail" pulled the model's answer. All 400 cells in `Summary!D41:G140`
+shifted to `Q`/`R`/`S`/`T`. Re-verified against the live file first rather than trusting Session 38's
+write-up.
+
+**Which side was wrong was settled by evidence, not judgement.** The sheet's own conditional formatting
+already fired on `E="FAIL"` and `G="FAIL"` — meaning it expected those columns to hold PASS/FAIL, which
+under the buggy formulas no input could ever produce. That rule had been dead the entire time. Together
+with all 22 aggregate formulas above the table already using `R`/`T` correctly, the formulas were
+clearly the minority view. Headers and formatting therefore needed no change, and got none.
+
+**Verified by exercising the table, not inspecting it** — deliberately, per D-161's lesson. A throwaway
+copy was filled with dummy results, recalculated headlessly in LibreOffice, and read back. A **control
+copy carrying the old formulas was recalculated alongside it** and reproduced the bug live, which is
+what proves the check discriminates rather than passing either way. Both copies deleted; the committed
+file's result columns remain empty. A full cell-level before/after snapshot showed 0 differences outside
+the 400 target cells across all four sheets.
+
+**Then Sakshi's question found something larger — D-167.** She asked why the `severity` column is
+filled in on every row even where the concept doesn't apply. It exposed a problem D-163's audit had
+missed, because that audit asked only whether each tag was defensible for its field, never whether the
+column carries information at all. It doesn't: for **14 of 15 rows the tag is fully determined by
+`field_under_test`** and could be reconstructed from it. There is no `not_applicable` option even though
+the sheet's other tag columns have exactly that three-value structure. The false-positive/false-negative
+framing assumes a yes/no answer that `remote_type` (four classes) and `technical_depth` (a 1–5 score)
+don't have. The Legend's technical and plain-language definitions of the column contradict each other.
+
+**The root cause is a coverage gap, not labelling.** Every row in the set expects an answer on the
+"should be visible" side; **no row tests the opposite direction** — a job that should be hidden which
+the AI wrongly keeps visible. The column looks uniform because the set only tests one direction. D-163
+recorded this gap but understated it as "a coverage gap, not a data error." It is the cause.
+
+**Why it isn't cosmetic:** the Summary sheet publishes a metric labelled "False-negative rate" that
+actually means "failure rate across `remote_type` + `is_ai` + one `technical_depth` row" — an overclaim
+in portfolio material, aimed at the readers most likely to know what the term denotes.
+
+**Concurrency note:** a parallel session was writing to these same docs during this one, claiming
+D-165/D-166 and the "Session 39" header. Numbers were re-grepped immediately before every write; this
+session's D-164, its D-163 pointer, its learnings entry and the `.xlsx` fix were all re-verified intact
+afterwards.
+
+### Decisions/amendments made
+- **D-164** — closes D-163's flag: `Summary!D41:G140` shifted to `Q`/`R`/`S`/`T`; verified by live
+  recalculation plus a control copy; separate row-coverage gap (table 100 rows vs aggregates 500)
+  flagged, not fixed.
+- **D-167** — **AMENDS D-163, and is a FINDING ONLY, not a decision.** The `severity` column is largely
+  uninformative and its label overclaims; five findings recorded, four options put to Sakshi, **none
+  chosen**. D-163's "severity tags check out" line was annotated in place with a scope warning so it
+  can't be cited as clearing the column.
+
+### Next steps
+1. **Choose a direction on `severity` (D-167) — this is the live open question.** Options, unchosen:
+   (a) write the missing "should have been hidden" rows (fixes the cause, makes the column split
+   naturally, largest effort — this was the recommendation); (b) add a `not_applicable` third value
+   mirroring the status columns; (c) rename to `cost_if_wrong` (noise / missed_job) and correct the
+   Summary metric label; (d) relabel only the Summary metric. Do not treat any of these as settled.
+2. Fix the detail table's row coverage (rows 2–101 vs the aggregates' 2–500) so case 101+ can't be
+   counted in the statistics while never appearing in the table — flagged in D-164.
+3. Get Sakshi's explicit sign-off on GC-006 (`is_ai` borderline) and GC-012 (`technical_depth`
+   borderline) — still open from Session 36.
+4. D-71/D-149's golden eval harness (`tests/golden/fixtures.ts` + `run.ts`) still doesn't exist — the
+   golden set still can't actually run. Carried over from Sessions 33–38.
+5. Revisit `is_technical`'s severity convention (D-163's soft finding) — now subsumed by D-167, so
+   handle it as part of whichever option is chosen there rather than separately.
+6. Still carried over, untouched: D-149's implementation, the stale comment at
+   `lib/discovery/apify.ts:65`, the 3 inconclusive "Remote OK" cases (Pocket FM, EOK Gems, Netomi).
+
+*Before starting next session: read the decision log and this summary entry fresh — don't trust a
+memory snapshot of what was decided.*

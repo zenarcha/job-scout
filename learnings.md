@@ -1577,3 +1577,53 @@ that setting?", look for some *unrelated* recent change and check whether it is 
 colour fix was sitting in the same pending commit. Fetching the deployed stylesheet and seeing the old
 colour proved in one step that no rebuild had occurred — no build logs, no timestamps, no guessing.
 Later, seeing the *new* colour alongside a still-broken page was what killed explanation 1.
+
+## A test set that only tests one direction produces a label that looks meaningful and isn't (2026-08-14)
+
+The golden dataset has a column called `severity`. Its job is to answer one question about each test
+row: *if the AI gets this wrong, what does it cost you?* Two answers are allowed — you see junk you
+didn't want, or you miss a job you wanted. Those are labelled with the statistics terms "false
+positive" and "false negative."
+
+Sakshi asked why every single row has one of the two filled in, even where neither really fits. That
+question found something a narrower audit (D-163) had missed.
+
+**What was actually wrong.** For 14 of the 15 rows, the answer in that column is completely determined
+by the column next to it. Every remote-type row says "you miss a job." Every geo row says "you see
+junk." So the column isn't recording a judgement about each individual case — it's restating what kind
+of case it is, in different words. You could delete the column and rebuild it perfectly from its
+neighbour.
+
+**Why it got filled in everywhere anyway.** Only two answers were offered, so there was no way to say
+"neither of these fits." The striking part is that the same spreadsheet already solves this properly in
+its other tag columns, which offer a third choice — *checked, genuinely not a factor here* — and
+explicitly document that the resulting blank is deliberate rather than forgotten. The severity column
+never got that third option. This is the same "absent is not the same as negative" trap this project
+has now hit several times: without a way to say "doesn't apply," a real answer and a shrug look
+identical in the data.
+
+**And for two fields the question doesn't even parse.** False positive / false negative assumes a
+yes-or-no answer that can be wrong in one of two directions. `remote_type` has four possible answers
+(remote worldwide, remote within India, hybrid, in-office) — picking the wrong one of four isn't
+"wrongly saying yes." `technical_depth` is a score out of five — answering 3 when the truth is 4 is
+just a bit off, with no yes or no involved anywhere.
+
+**The smoke-alarm framing, which is the real point.** Every test in the set is a case where the correct
+answer is "yes, show this job." Not one tests the opposite — a job that should be hidden, which the AI
+wrongly shows anyway. It's a smoke alarm test suite where every test is *"there's a fire, does it go
+off?"* and none is *"there's no fire, does it stay quiet?"* So when you ask which failures are false
+alarms and which are missed fires, everything answers "missed fire" — not because that's a finding, but
+because the false-alarm test was never written. **The uniform column isn't a labelling bug; it is the
+test set honestly reporting that it only covers one direction.**
+
+**Why it matters beyond tidiness.** The Summary sheet publishes a number labelled "False-negative
+rate." That is a real, widely-understood technical term. Because of everything above, the number
+underneath it is really just "how often did the remote and AI-job questions fail" — it doesn't mean
+what its label promises. This workbook is portfolio material, so the readers most likely to see that
+label are the readers most likely to know exactly what it should mean.
+
+**The transferable lesson.** When a categorical column in an evaluation set comes out overwhelmingly
+uniform, the first question is not "are the labels right?" but **"can this column be derived from
+another one?"** If it can, it is not measuring anything on its own — and the usual reason is that the
+data only covers one side of the thing the label claims to distinguish. Fixing the labels there treats
+the symptom; adding the missing cases is what makes the column mean something.

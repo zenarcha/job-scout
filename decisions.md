@@ -4118,7 +4118,10 @@ genuine data bug surfaced while drafting the rewrite.
   `lib/enrich/geoRecheck.ts`'s fail-open trigger, and verified every cited decision ID (D-121, D-129,
   D-130, D-146/147, D-149, D-133/136, D-75, D-63, D-62, D-64, D-73, D-53, D-54, D-50, D-74, D-94)
   actually exists in this log.
-  - **Result: severity tags check out.** `technical_depth`'s false-positive/false-negative split
+  - **Result: severity tags check out.** *(Scope warning — AMENDED by D-167: this checked only whether
+    each tag was defensible for its field. It did not ask whether the column carries any information at
+    all, and it does not, for 14 of 15 rows. Do not cite this line as clearing the `severity` column.)*
+    `technical_depth`'s false-positive/false-negative split
     between GC-007 (severity=false-positive) and GC-012 (severity=false-negative) correctly tracks the
     `>= 4` downgrade threshold in `recommend.ts` — GC-007 tests the risk of the AI *under*-scoring a
     genuinely deep-technical job (missed downgrade → shown as noise), GC-012 tests the risk of the AI
@@ -4256,3 +4259,53 @@ plausible-but-wrong explanation in the learning doc.
   site with no server layer can never use it, and it is the one credential that bypasses RLS entirely.
   Removed on least-privilege grounds. `AI_PROVIDER`, `GEMINI_*` and `CEREBRAS_*` are also unused there;
   left in place as harmless config.
+
+## D-167 — AMENDS D-163: its "severity tags check out" finding was too narrow; the `severity` column is largely uninformative and its label overclaims. FINDING ONLY — no decision made, awaiting Sakshi's call (2026-08-14, 20:16 IST)
+D-163's audit checked whether each row's `severity` tag was *defensible for its field*. Sakshi asked a
+different and better question — why the column is filled in on every row even where the concept
+doesn't apply — and that question exposes a problem the narrower check could not have found. **This
+entry records the finding and the options; it does not decide anything.** D-163's "severity tags check
+out" line should be read as scoped to the question it actually asked.
+- **Finding 1 — the tag is a pure function of `field_under_test` for 14 of 15 rows.** `remote_type` is
+  false-negative 6/6, `is_ai` false-negative 3/3, `geo_explicit` false-positive 3/3, `is_technical`
+  false-positive 1/1. Only `technical_depth` splits (GC-007 / GC-012). The column could be deleted and
+  reconstructed exactly from the column beside it, so it carries no per-case judgement.
+- **Finding 2 — there is no `not_applicable` escape hatch, and the sheet already knows better.**
+  `input_pattern_status` and `root_cause_status` both carry a three-value vocabulary
+  (`diagnosed` / `not_applicable` / `not_yet_diagnosed`), and the `Failure Categories` sheet explicitly
+  documents that the paired blank is deliberate rather than missing. `severity` offers exactly two
+  values, so "doesn't apply" and a real considered answer are indistinguishable in the data. This is
+  the same **absent-is-not-negative** failure mode this project has now hit four times.
+- **Finding 3 — the false-positive/false-negative framing is a binary-classifier concept that two of
+  the fields aren't.** `remote_type` is multi-class (`remote_global`/`remote_india`/`hybrid`/`onsite`) —
+  answering `remote_india` when the truth is `remote_global` is a misclassification, neither a false
+  positive nor a false negative. `technical_depth` is a 1–5 score — 3 against a true 4 is off-by-one,
+  not a false anything.
+- **Finding 4 — the Legend's own two definitions of the column disagree.** Its technical note gives the
+  classifier meaning ("model said yes when it should say no"); its plain-language note gives a
+  *consequence-direction* meaning ("does it create noise, or cost you a job you should have seen?").
+  Only the second applies to all 15 rows, and D-159's rationale for moving the column ("about the
+  consequence of *this* assertion") confirms the consequence reading was the working intent. The column
+  measures something real but wears a narrower label.
+- **Finding 5 — the real cause is a coverage gap, not bad labelling.** Every row in the set has an
+  `expected_value` on the "should be visible to Sakshi" side. There is **no row anywhere testing the
+  opposite direction** — a job that should be hidden, which the AI wrongly keeps visible. The column
+  looks uniform because the set only ever tests one direction; if the missing rows existed,
+  `remote_type` and `is_ai` would split on their own. D-163 recorded this gap but classified it as "a
+  coverage gap, not a data error," which understated it — it is the cause of Findings 1 and 4.
+- **Consequence, and why this is not cosmetic:** the `Summary` sheet publishes a metric labelled
+  "False-negative rate (severity=false-negative, FAIL / graded)" (built under D-152). Because severity
+  is a function of field, that number is really "failure rate across `remote_type` + `is_ai` + one
+  `technical_depth` row." It is not a false-negative rate in the sense the term denotes. This matters
+  more than usual because the workbook is portfolio material (see the D-90 framing) and the audience
+  most likely to read it is the audience most likely to know what the term means.
+- **`severity` was never itself decided** — it is inherited. D-152 refers to "the existing `severity`
+  column" and D-159 only relocated it; no entry establishes its vocabulary or its two-value structure.
+  Same **inherited-not-decided** pattern already confirmed at schema, code and workspace altitude.
+- **Options put to Sakshi, none chosen yet:** (a) write the missing "should have been hidden" rows —
+  fixes the cause, makes the column split naturally, largest effort; (b) add a `not_applicable` third
+  value mirroring the status columns — fixes the forced choice, leaves the uniformity; (c) rename the
+  column to what it measures (e.g. `cost_if_wrong`, values noise / missed_job) and correct the Summary
+  metric's label — cheapest, removes the overclaim, adds no coverage; (d) relabel only the Summary
+  metric and leave the column alone — smallest possible change. Sakshi asked for the explanation in
+  plain language before choosing; **the choice is still open and must not be treated as settled.**

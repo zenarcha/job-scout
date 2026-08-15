@@ -2500,3 +2500,63 @@ Additionally — and independent of Vercel — the `anon` read path was exercise
 Supabase with the anon key: `v_jobs_public` 52 rows, `remote_companies` 29 rows, and both
 `jobs.recruiter_email` and `job_enrichments.raw_output` refused with `42501`. This isolated the
 remaining failure to Vercel's build-time env substitution alone.
+
+---
+
+## Plan — Fix the Summary sheet's "Case-level detail" off-by-one column bug (Session 40, 2026-08-14)
+
+*Original plan file: `~/.claude/plans/session-38-summary-what-lexical-simon.md` — approved and executed
+this session; landed as D-164. Copied here in full since plan files outside the project get cleared.*
+
+### Context
+Session 38 found, but deliberately did not fix, a real bug in
+`samples/golden-dataset/golden-dataset-template.xlsx`, logged under D-163 as "needs its own fix."
+
+In plain language: the Summary sheet's "Case-level detail — expected vs. actual" table shows, per test
+case, what answer the AI gave and whether it passed. Its four right-hand columns each read the **wrong
+column** of the Golden Dataset sheet — every one looking one column too far left. The column labelled
+"output" would show the `why_this_test_exists` note instead of the AI's answer; "pass/fail" would show
+the answer instead of PASS/FAIL. It stayed invisible because the eval has never run, so the source
+columns are empty and the table renders blank either way.
+
+| Summary col | Header says | Was reading | Fixed to |
+|---|---|---|---|
+| `D` | output (baseline_v4_prompt-2026-08-13) | `P` (`why_this_test_exists`) | `Q` |
+| `E` | pass/fail (baseline…) | `Q` | `R` |
+| `F` | output (reasoningredesign_TBD_TBD) | `R` | `S` |
+| `G` | pass/fail (reasoningredesign…) | `S` | `T` |
+
+### Why the formulas, not the headers, were the wrong side
+1. **The conditional formatting already assumed the corrected layout** — `D41:D140`/`E41:E140` fire on
+   `E41="FAIL"`, `F41:F140`/`G41:G140` on `G41="FAIL"`, i.e. it expects `E`/`G` to hold PASS/FAIL. Under
+   the buggy formulas that rule could never fire under any input. Needed no change; the fix is what
+   makes it work.
+2. **All 22 aggregate formulas above the table already used `R`/`T` correctly.** The bug was isolated.
+
+### Change
+Rewrite all 400 cells in `Summary!D41:G140`, shifting one column right, preserving the existing
+self-guarding idiom `=IF('Golden Dataset'!<col><row>="","",'Golden Dataset'!<col><row>)` (the reference
+appears twice per cell; both move together). `A`/`B`/`C` guard on `A` (`case_id`), are correct, untouched.
+
+Tooling: `openpyxl` via system `python3` (3.9.6 + openpyxl 3.1.5). Safe because the file was itself
+authored by openpyxl — no `calcChain.xml`, charts, images, tables, merged cells, data validations, or
+cached formula values, so a round-trip had nothing to destroy.
+
+### Verification (as executed)
+1. **Static** — cell-level snapshot taken before the edit, diffed against the saved file: 0 differences
+   outside the 400 target cells across all four sheets; conditional formatting and column widths
+   unchanged everywhere.
+2. **Live recalculation** — a throwaway copy filled with dummy results for GC-001–003, recalculated
+   headlessly in LibreOffice, values read back: "output" showed the dummy answer, "pass/fail" showed
+   `PASS`/`FAIL`, two rows satisfying the previously-unsatisfiable highlight condition. A **control copy
+   carrying the old formulas** was recalculated alongside and showed the bug live (`why_this_test_exists`
+   prose under "output") — that control is what proves the check discriminates rather than passing
+   either way. Both copies deleted; the committed file's `Q:T` remain empty across all 15 case rows.
+3. **Diff sanity** — only the one `.xlsx` touched by this change.
+
+### Explicit non-goals (all held)
+- Headers, conditional formatting, and the other three sheets untouched.
+- **Row coverage not changed** — the detail table covers Golden Dataset rows 2–101 while the aggregates
+  read 2–500, so case 101+ would be counted in the statistics but never appear in the table. Real,
+  separate, flagged in D-164, not folded in.
+- Eval harness not built — `tests/golden/fixtures.ts` + `run.ts` (D-71/D-149) still don't exist.
